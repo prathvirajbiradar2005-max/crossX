@@ -44,10 +44,14 @@ def validate_csv(df: pd.DataFrame) -> Tuple[bool, List[str], pd.DataFrame]:
     """
     errors: List[str] = []
 
+    # 0. Normalise column names (strip whitespace, lowercase) ----------------
+    df.columns = df.columns.str.strip().str.lower()
+
     # 1. Check required columns ------------------------------------------------
     missing = set(REQUIRED_COLUMNS.keys()) - set(df.columns)
     if missing:
         errors.append(f"Missing required columns: {', '.join(sorted(missing))}")
+        errors.append(f"Columns found in your file: {', '.join(sorted(df.columns))}")
         return False, errors, pd.DataFrame()
 
     # Work on a copy so downstream mutations don't affect the original

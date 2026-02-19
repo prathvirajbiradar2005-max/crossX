@@ -29,6 +29,7 @@ from utils.json_export import (
     report_to_json_string,
     build_ring_summary_table,
 )
+from utils.sample_data import sample_csv_bytes
 from detection.cycles import detect_cycles
 from detection.smurfing import detect_smurfing
 from detection.shell_network import detect_shell_networks
@@ -112,6 +113,20 @@ if uploaded_file is None:
         "👈 Upload a transaction CSV to get started.\n\n"
         "**Required columns:** `transaction_id`, `sender_id`, `receiver_id`, "
         "`amount`, `timestamp` (YYYY-MM-DD HH:MM:SS)"
+    )
+
+    st.markdown("---")
+    st.subheader("📎 No CSV? Try the built-in sample data")
+    st.markdown(
+        "Download the sample CSV below — it contains **~500 transactions** "
+        "with embedded fraud patterns (cycles, smurfing, shell networks, "
+        "and normal traffic) so you can test the engine immediately."
+    )
+    st.download_button(
+        label="⬇️ Download Sample CSV",
+        data=sample_csv_bytes(),
+        file_name="sample_transactions.csv",
+        mime="text/csv",
     )
     st.stop()
 

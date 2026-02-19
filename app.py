@@ -139,6 +139,12 @@ raw_bytes = uploaded_file.read()
 # Decode with utf-8-sig to strip BOM, then re-parse
 text = raw_bytes.decode("utf-8-sig", errors="replace")
 raw_df = pd.read_csv(io.StringIO(text))
+
+# ── Debug: show raw columns & first rows so users can verify the upload ───
+with st.expander("🐛 Debug — Raw CSV Preview", expanded=False):
+    st.write("**Columns detected:**", raw_df.columns.tolist())
+    st.dataframe(raw_df.head(2), use_container_width=True)
+
 is_valid, errors, df = validate_csv(raw_df)
 
 if errors:

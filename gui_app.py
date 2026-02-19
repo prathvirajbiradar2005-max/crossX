@@ -11,7 +11,8 @@ import time
 import json
 import pandas as pd
 from pathlib import Path
-from flask import Flask, render_template, request, jsonify
+from functools import wraps
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 
 from utils.validation import validate_csv
 from utils.graph_builder import build_transaction_graph, build_simple_digraph
@@ -28,6 +29,24 @@ from detection.scoring import compute_suspicion_scores
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB max upload
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "crossX-money-muling-s3cr3t-key-2026")
+
+# ── Admin credentials ─────────────────────────────────────────────────────────
+ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "crossX@2026")
+
+
+def admin_required(f):
+    """Decorator to protect admin routes with session-based auth."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get("admin_authenticated"):
+            # For API endpoints return 401 JSON; for pages redirect to login
+            if request.is_json or request.method == "POST":
+                return jsonify({"error": True, "errors": ["Authentication required"], "auth_required": True}), 401
+            return redirect(url_for("admin_login_page"))
+        return f(*args, **kwargs)
+    return decorated
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -666,16 +685,50 @@ def account_list():
 
 
 # ══════════════════════════════════════════════════════════════════
-# ADMIN PANEL
+# ADMIN AUTH
+# ══════════════════════════════════════════════════════════════════
+
+@app.route("/admin/login", methods=["GET"])
+def admin_login_page():
+    """Serve the admin login page."""
+    if session.get("admin_authenticated"):
+        return redirect(url_for("admin_page"))
+    return render_template("admin_login.html")
+
+
+@app.route("/admin/login", methods=["POST"])
+def admin_login():
+    """Authenticate admin credentials."""
+    data = request.get_json(silent=True) or {}
+    username = data.get("username", "").strip()
+    password = data.get("password", "").strip()
+
+    if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+        session["admin_authenticated"] = True
+        return jsonify({"error": False, "message": "Login successful"})
+    return jsonify({"error": True, "errors": ["Invalid username or password"]}), 401
+
+
+@app.route("/admin/logout", methods=["POST"])
+def admin_logout():
+    """Clear admin session."""
+    session.pop("admin_authenticated", None)
+    return jsonify({"error": False, "message": "Logged out"})
+
+
+# ══════════════════════════════════════════════════════════════════
+# ADMIN PANEL (protected)
 # ══════════════════════════════════════════════════════════════════
 
 @app.route("/admin")
+@admin_required
 def admin_page():
     """Serve the admin panel."""
     return render_template("admin.html")
 
 
 @app.route("/admin/data", methods=["POST"])
+@admin_required
 def admin_data():
     """Return all accounts with scores, patterns for the admin table."""
     try:
@@ -700,6 +753,7 @@ def admin_data():
 
 
 @app.route("/admin/report", methods=["POST"])
+@admin_required
 def admin_report():
     """Generate downloadable JSON report in the required output format."""
     try:
@@ -766,6 +820,7 @@ def admin_report():
 
 
 @app.route("/admin/trace", methods=["POST"])
+@admin_required
 def admin_trace():
     """Return full transaction trace for a single account."""
     try:

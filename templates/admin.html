@@ -84,7 +84,10 @@
                 <p class="text-xs text-yellow-300/60 mt-1">Account Management • Flag/Unflag • Transaction Tracing</p>
             </div>
         </div>
-        <a href="/" class="btn btn-primary px-5 py-2 rounded-lg text-sm font-bold no-underline">← Back to Dashboard</a>
+        <div class="flex items-center gap-3">
+            <a href="/" class="btn btn-primary px-5 py-2 rounded-lg text-sm font-bold no-underline">← Back to Dashboard</a>
+            <button onclick="logout()" class="px-4 py-2 rounded-lg text-sm font-bold" style="background:rgba(239,83,80,0.15);border:1px solid rgba(239,83,80,0.3);color:#ef5350;cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='rgba(239,83,80,0.3)'" onmouseout="this.style.background='rgba(239,83,80,0.15)'">🔒 Logout</button>
+        </div>
     </div>
 </header>
 
@@ -164,8 +167,22 @@ window.addEventListener('load', () => {
     loadData();
 });
 
+// ───────────── AUTH HELPERS ─────────────
+function authFetch(url, opts = {}) {
+    return fetch(url, opts).then(r => {
+        if (r.status === 401) { window.location.href = '/admin/login'; throw new Error('Session expired'); }
+        return r;
+    });
+}
+
+function logout() {
+    fetch('/admin/logout', { method: 'POST' })
+        .then(() => { window.location.href = '/admin/login'; })
+        .catch(() => { window.location.href = '/admin/login'; });
+}
+
 function loadData() {
-    fetch('/admin/data', { method: 'POST' })
+    authFetch('/admin/data', { method: 'POST' })
         .then(r => r.json())
         .then(data => {
             if (data.error) { alert(data.errors.join('\n')); return; }
@@ -176,7 +193,7 @@ function loadData() {
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('mainContent').classList.remove('hidden');
         })
-        .catch(err => alert('Failed to load data: ' + err.message));
+        .catch(err => { if (err.message !== 'Session expired') alert('Failed to load data: ' + err.message); });
 }
 
 // ───────────── STATS ─────────────
@@ -337,7 +354,7 @@ function traceAccount(accountId) {
     document.getElementById('traceModal').classList.add('active');
     document.body.classList.add('modal-open');
 
-    fetch('/admin/trace', {
+    authFetch('/admin/trace', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ account_id: accountId })
@@ -490,7 +507,7 @@ function downloadJSON() {
     btn.disabled = true;
     btn.textContent = '⏳ Generating...';
 
-    fetch('/admin/report', { method: 'POST',
+    authFetch('/admin/report', { method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ overrides: adminOverrides })
     })

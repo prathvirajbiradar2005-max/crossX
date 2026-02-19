@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💎 Money Muling Detection Engine - Advanced Analytics</title>
+    <script src="https://unpkg.com/vis-network@9.1.6/standalone/umd/vis-network.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 25%, #0f172a 50%, #1e1b4b 75%, #0f172a 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════ */
+        /* ADVANCED ANIMATIONS */
+        /* ═════════════════════════════════════════════════════════════════ */
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(-40px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(40px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes pulse-glow {
+            0%, 100% { filter: drop-shadow(0 0 8px rgba(79, 195, 247, 0.3)); }
+            50%      { filter: drop-shadow(0 0 20px rgba(79, 195, 247, 0.6)); }
+        }
+        @keyframes shimmer {
+            0%   { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        @keyframes bounce-in {
+            0%   { opacity: 0; transform: scale(0.8) translateY(20px); }
+            50%  { opacity: 1; }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes float-in {
+            0%   { opacity: 0; transform: translateY(20px) rotateX(20deg); }
+            100% { opacity: 1; transform: translateY(0) rotateX(0); }
+        }
+        @keyframes gradient-shift {
+            0%   { background-position: 0% 50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes neon-glow {
+            0%, 100% { 
+                text-shadow: 0 0 7px #fff, 0 0 10px #4fc3f7, 0 0 21px #4fc3f7;
+                filter: brightness(1.2);
+            }
+            50% { 
+                text-shadow: 0 0 20px #fff, 0 0 30px #4fc3f7, 0 0 40px #4fc3f7;
+                filter: brightness(1.4);
+            }
+        }
+        @keyframes gradientShift {
+            0%   { background-position: 0% 50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .animate-fadeInUp { animation: fadeInUp 0.6s ease-out; }
+        .animate-slideInRight { animation: slideInRight 0.6s ease-out; }
+        .animate-slideInLeft { animation: slideInLeft 0.6s ease-out; }
+        .animate-pulse-glow { animation: pulse-glow 2.5s ease-in-out infinite; }
+        .animate-shimmer { animation: shimmer 2s ease-in-out infinite; }
+        .animate-bounce-in { animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        .animate-float-in { animation: float-in 0.8s ease-out; }
+        .animate-gradient-shift { animation: gradient-shift 6s ease-in-out infinite; }
+        .animate-neon-glow { animation: neon-glow 2s ease-in-out infinite; }
+        
+        /* Glass morphism effect */
+        .glass {
+            background: rgba(15, 25, 35, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(79, 195, 247, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass:hover {
+            background: rgba(15, 25, 35, 0.6);
+            border-color: rgba(79, 195, 247, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px rgba(79, 195, 247, 0.1);
+        }
+        
+        /* Stagger animations for lists */
+        tr:nth-child(1) { animation-delay: 0.08s; }
+        tr:nth-child(2) { animation-delay: 0.16s; }
+        tr:nth-child(3) { animation-delay: 0.24s; }
+        tr:nth-child(4) { animation-delay: 0.32s; }
+        tr:nth-child(5) { animation-delay: 0.40s; }
+        .scorecard:nth-child(1) { animation-delay: 0.05s; }
+        .scorecard:nth-child(2) { animation-delay: 0.10s; }
+        .scorecard:nth-child(3) { animation-delay: 0.15s; }
+        .scorecard:nth-child(4) { animation-delay: 0.20s; }
+        .ring-card:nth-child(1) { animation-delay: 0.06s; }
+        .ring-card:nth-child(2) { animation-delay: 0.12s; }
+        .ring-card:nth-child(3) { animation-delay: 0.18s; }
+        .accent-danger { background: linear-gradient(135deg, #ef5350 0%, #e53935 100%); }
+        .accent-success { background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%); }
+        .accent-warning { background: linear-gradient(135deg, #ffa726 0%, #f57c00 100%); }
+        
+        /* Smooth transitions */
+        .transition-smooth { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .transition-fast { transition: all 0.15s ease-out; }
+        
+        /* Tab content and styling */
+    </style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f1923;
+            color: #e0e6ed;
+            min-height: 100vh;
+        }
+
+        /* ── Header ─────────────────────────────────── */
+        .header {
+            background: linear-gradient(135deg, #1a2332 0%, #0d1b2a 100%);
+            border-bottom: 2px solid #1e3a5f;
+            padding: 20px 40px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #4fc3f7;
+        }
+        .header .icon { font-size: 28px; }
+        .header .subtitle { color: #7a8a9e; font-size: 13px; margin-top: 2px; }
+
+        /* ── Main Layout ────────────────────────────── */
+        .container { max-width: 1400px; margin: 0 auto; padding: 30px 20px; }
+
+        /* ── Upload Section ─────────────────────────── */
+        .upload-section {
+            background: #1a2738;
+            border: 2px dashed #2a4a6b;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: border-color 0.3s, background 0.3s;
+        }
+        .upload-section.dragover {
+            border-color: #4fc3f7;
+            background: #1e3048;
+        }
+        .upload-section h2 { color: #4fc3f7; margin-bottom: 10px; font-size: 20px; }
+        .upload-section p { color: #7a8a9e; margin-bottom: 20px; font-size: 14px; }
+        .btn-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: #4fc3f7; color: #0f1923; }
+        .btn-primary:hover { background: #81d4fa; transform: translateY(-1px); }
+        .btn-secondary { background: #2a4a6b; color: #b0c4de; }
+        .btn-secondary:hover { background: #3a5a7b; }
+        .btn-download { background: #2e7d32; color: #fff; }
+        .btn-download:hover { background: #388e3c; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        input[type="file"] { display: none; }
+        .file-name { color: #81d4fa; margin-top: 10px; font-size: 13px; }
+
+        /* ── Loading ────────────────────────────────── */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 60px 20px;
+        }
+        .loading.active { display: block; }
+        .spinner {
+            width: 50px; height: 50px;
+            border: 4px solid #2a4a6b;
+            border-top-color: #4fc3f7;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading p { color: #7a8a9e; font-size: 15px; }
+
+        /* ── Results ────────────────────────────────── */
+        .results { display: none; }
+        .results.active { display: block; }
+
+        /* Summary Cards */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: #1a2738;
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid #4fc3f7;
+        }
+        .card.high { border-left-color: #ef5350; }
+        .card.medium { border-left-color: #ffa726; }
+        .card.low { border-left-color: #66bb6a; }
+        .card.info { border-left-color: #4fc3f7; }
+        .card .value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        .card.high .value { color: #ef5350; }
+        .card.medium .value { color: #ffa726; }
+        .card.low .value { color: #66bb6a; }
+        .card .label { font-size: 13px; color: #7a8a9e; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 0;
+            border-bottom: 2px solid #1e3a5f;
+        }
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            color: #7a8a9e;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+        }
+        .tab:hover { color: #b0c4de; }
+        .tab.active { color: #4fc3f7; border-bottom-color: #4fc3f7; }
+
+        .tab-content {
+            display: none;
+            background: #1a2738;
+            border-radius: 0 0 10px 10px;
+            padding: 24px;
+            margin-bottom: 30px;
+        }
+        .tab-content.active { display: block; }
+
+        /* Tables */
+        .table-wrapper { overflow-x: auto; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th {
+            background: #0f1923;
+            color: #4fc3f7;
+            padding: 12px 14px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+        }
+        td {
+            padding: 10px 14px;
+            border-bottom: 1px solid #1e3a5f;
+            color: #c0cede;
+        }
+        tr:hover td { background: #1e2f42; }
+
+        /* Risk badges */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .badge-high { background: rgba(239,83,80,0.2); color: #ef5350; }
+        .badge-medium { background: rgba(255,167,38,0.2); color: #ffa726; }
+        .badge-low { background: rgba(102,187,106,0.2); color: #66bb6a; }
+
+        .pattern-tag {
+            display: inline-block;
+            background: #1e3a5f;
+            color: #81d4fa;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin: 1px 2px;
+        }
+
+        /* Ring cards */
+        .ring-card {
+            background: #0f1923;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 4px solid #ef5350;
+        }
+        .ring-card h4 { color: #4fc3f7; margin-bottom: 6px; }
+        .ring-card .ring-meta { color: #7a8a9e; font-size: 12px; margin-bottom: 8px; }
+        .ring-card .ring-members { display: flex; flex-wrap: wrap; gap: 4px; }
+
+        /* Smurfing / Shell sections */
+        .section-title { color: #4fc3f7; font-size: 16px; margin-bottom: 12px; font-weight: 600; }
+        .hub-item {
+            background: #0f1923;
+            border-radius: 8px;
+            padding: 14px 18px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .hub-item .hub-name { font-weight: 600; color: #fff; }
+        .hub-item .hub-detail { color: #7a8a9e; font-size: 13px; }
+        .hub-item .hub-amount { color: #ffa726; font-weight: 600; }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #506680;
+            font-size: 14px;
+        }
+
+        /* ── Graph Visualization ────────────────────── */
+        #graphContainer {
+            width: 100%;
+            height: 650px;
+            background: #0a1520;
+            border-radius: 8px;
+            border: 1px solid #1e3a5f;
+            position: relative;
+        }
+        .graph-legend {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(15,25,35,0.92);
+            border: 1px solid #1e3a5f;
+            border-radius: 8px;
+            padding: 14px 18px;
+            z-index: 10;
+            font-size: 12px;
+        }
+        .graph-legend h4 { color: #4fc3f7; margin-bottom: 8px; font-size: 13px; }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+            color: #b0c4de;
+        }
+        .legend-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+        .graph-tooltip {
+            position: absolute;
+            display: none;
+            background: rgba(15,25,35,0.95);
+            border: 1px solid #4fc3f7;
+            border-radius: 8px;
+            padding: 14px 18px;
+            z-index: 20;
+            max-width: 320px;
+            pointer-events: none;
+            font-size: 13px;
+        }
+        .graph-tooltip h4 { color: #4fc3f7; margin-bottom: 6px; }
+        .graph-tooltip .tt-row { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 3px; }
+        .graph-tooltip .tt-label { color: #7a8a9e; }
+        .graph-tooltip .tt-value { color: #fff; font-weight: 600; }
+        .graph-controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .graph-controls label { color: #7a8a9e; font-size: 13px; }
+
+        /* Score bar */
+        .score-bar {
+            width: 80px;
+            height: 6px;
+            background: #1e3a5f;
+            border-radius: 3px;
+            overflow: hidden;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s;
+        }
+
+        /* Filter / Search */
+        .toolbar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .search-input {
+            background: #0f1923;
+            border: 1px solid #2a4a6b;
+            color: #e0e6ed;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            flex: 1;
+            min-width: 200px;
+        }
+        .search-input::placeholder { color: #506680; }
+        .search-input:focus { outline: none; border-color: #4fc3f7; }
+        .filter-btn {
+            padding: 8px 16px;
+            background: #0f1923;
+            border: 1px solid #2a4a6b;
+            color: #7a8a9e;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-btn:hover, .filter-btn.active { border-color: #4fc3f7; color: #4fc3f7; }
+
+        /* Error */
+        .error-box {
+            background: rgba(239,83,80,0.1);
+            border: 1px solid #ef5350;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .error-box.active { display: block; }
+        .error-box h3 { color: #ef5350; margin-bottom: 8px; }
+        .error-box li { color: #e0a0a0; margin-left: 20px; font-size: 14px; margin-bottom: 4px; }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #3a5068;
+            font-size: 12px;
+            border-top: 1px solid #1e3a5f;
+            margin-top: 40px;
+        }
+
+        /* ── Account Explorer ───────────────────────── */
+        .explorer-bar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .explorer-bar select, .explorer-bar input {
+            background: #0f1923;
+            border: 1px solid #2a4a6b;
+            color: #e0e6ed;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .explorer-bar select { min-width: 240px; }
+        .explorer-bar input  { min-width: 200px; flex: 1; }
+        .explorer-bar select:focus, .explorer-bar input:focus { outline: none; border-color: #4fc3f7; }
+
+        .explorer-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: #0f1923;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            border-top: 3px solid #4fc3f7;
+        }
+        .stat-card.sent   { border-top-color: #ef5350; }
+        .stat-card.recv   { border-top-color: #66bb6a; }
+        .stat-card.net    { border-top-color: #ffa726; }
+        .stat-card .sv { font-size: 24px; font-weight: 700; color: #fff; }
+        .stat-card.sent .sv { color: #ef5350; }
+        .stat-card.recv .sv { color: #66bb6a; }
+        .stat-card.net  .sv { color: #ffa726; }
+        .stat-card .sl { font-size: 11px; color: #7a8a9e; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.5px; }
+
+        #explorerGraph {
+            width: 100%;
+            height: 550px;
+            background: #0a1520;
+            border-radius: 8px;
+            border: 1px solid #1e3a5f;
+            margin-bottom: 24px;
+        }
+        .explorer-legend {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #7a8a9e;
+            flex-wrap: wrap;
+        }
+        .explorer-legend .el-item { display: flex; align-items: center; gap: 6px; }
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+    <span class="icon">&#128270;</span>
+    <div>
+        <h1>Money Muling Detection Engine</h1>
+        <div class="subtitle">Graph-theory-based fraud detection &mdash; Cycles &bull; Smurfing &bull; Shell Networks &bull; Suspicion Scoring</div>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- Upload Section -->
+    <div class="upload-section" id="uploadSection">
+        <h2>Upload Transaction Data</h2>
+        <p>Upload a CSV file with columns: <code style="color:#81d4fa">transaction_id, sender_id, receiver_id, amount, timestamp</code><br>
+           Or use the built-in sample dataset to see the engine in action.</p>
+        <div class="btn-row">
+            <label class="btn btn-primary" for="fileInput">Choose CSV File</label>
+            <input type="file" id="fileInput" accept=".csv">
+            <button class="btn btn-secondary" onclick="useSampleData()">Use Sample Data</button>
+        </div>
+        <div class="file-name" id="fileName"></div>
+    </div>
+
+    <!-- Error Box -->
+    <div class="error-box" id="errorBox">
+        <h3>&#9888; Validation Error</h3>
+        <ul id="errorList"></ul>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Analyzing transactions&hellip; detecting fraud patterns</p>
+    </div>
+
+    <!-- Results -->
+    <div class="results" id="results">
+
+        <!-- Summary Cards -->
+        <div class="summary-grid" id="summaryGrid"></div>
+
+        <!-- Action Bar -->
+        <div class="btn-row" style="margin-bottom:24px; justify-content:flex-start;">
+            <button class="btn btn-download" onclick="downloadReport()">&#11015; Download JSON Report</button>
+            <button class="btn btn-secondary" onclick="resetUI()">&#8634; New Analysis</button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab" onclick="switchTab('graph')">Transaction Graph</button>
+            <button class="tab active" onclick="switchTab('accounts')">All Accounts</button>
+            <button class="tab" onclick="switchTab('rings')">Fraud Rings</button>
+            <button class="tab" onclick="switchTab('smurfing')">Smurfing</button>
+            <button class="tab" onclick="switchTab('shell')">Shell Networks</button>
+            <button class="tab" onclick="switchTab('velocity')">Velocity</button>
+            <button class="tab" onclick="switchTab('layering')">Layering</button>
+            <button class="tab" onclick="switchTab('structuring')">Structuring</button>
+            <button class="tab" onclick="switchTab('communities')">Communities</button>
+            <button class="tab" onclick="switchTab('newaccounts')">New Accounts</button>
+            <button class="tab" onclick="switchTab('explorer')">Account Explorer</button>
+        </div>
+
+        <!-- Tab: Graph -->
+        <div class="tab-content" id="tab-graph">
+            <div class="graph-controls">
+                <label>Highlight: </label>
+                <button class="filter-btn active" onclick="graphHighlight('all')">All Nodes</button>
+                <button class="filter-btn" onclick="graphHighlight('high')">High Risk</button>
+                <button class="filter-btn" onclick="graphHighlight('rings')">Ring Members</button>
+                <button class="filter-btn" onclick="graphHighlight('shell')">Shell Accounts</button>
+            </div>
+            <div style="position:relative">
+                <div id="graphContainer"></div>
+                <div class="graph-legend">
+                    <h4>Legend</h4>
+                    <div class="legend-item"><span class="legend-dot" style="background:#ef5350"></span> High Risk (&ge;50)</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#ffa726"></span> Medium Risk (25-49)</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#66bb6a"></span> Low Risk (&lt;25)</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#e040fb;border:2px solid #fff"></span> Ring Member</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#00e5ff"></span> Shell / Relay</div>
+                </div>
+                <div class="graph-tooltip" id="graphTooltip"></div>
+            </div>
+        </div>
+
+        <!-- Tab: Accounts -->
+        <div class="tab-content active" id="tab-accounts">
+            <div class="toolbar">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search accounts..." oninput="filterTable()">
+                <button class="filter-btn active" onclick="setFilter('all')">All</button>
+                <button class="filter-btn" onclick="setFilter('high')">High Risk</button>
+                <button class="filter-btn" onclick="setFilter('medium')">Medium</button>
+                <button class="filter-btn" onclick="setFilter('low')">Low</button>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Account ID</th>
+                            <th>Score</th>
+                            <th>Risk Level</th>
+                            <th>Detected Patterns</th>
+                            <th>Ring</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accountsBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab: Rings -->
+        <div class="tab-content" id="tab-rings">
+            <div id="ringsContainer"></div>
+        </div>
+
+        <!-- Tab: Smurfing -->
+        <div class="tab-content" id="tab-smurfing">
+            <div id="smurfingContainer"></div>
+        </div>
+
+        <!-- Tab: Shell -->
+        <div class="tab-content" id="tab-shell">
+            <div id="shellContainer"></div>
+        </div>
+
+        <!-- Tab: Velocity -->
+        <div class="tab-content" id="tab-velocity">
+            <div id="velocityContainer"></div>
+        </div>
+
+        <!-- Tab: Layering -->
+        <div class="tab-content" id="tab-layering">
+            <div id="layeringContainer"></div>
+        </div>
+
+        <!-- Tab: Structuring -->
+        <div class="tab-content" id="tab-structuring">
+            <div id="structuringContainer"></div>
+        </div>
+
+        <!-- Tab: Communities -->
+        <div class="tab-content" id="tab-communities">
+            <div id="communitiesContainer"></div>
+        </div>
+
+        <!-- Tab: New Accounts -->
+        <div class="tab-content" id="tab-newaccounts">
+            <div id="newAccountsContainer"></div>
+        </div>
+
+        <!-- Tab: Account Explorer -->
+        <div class="tab-content" id="tab-explorer">
+            <p class="section-title">Account-Level Transaction Explorer</p>
+            <div class="explorer-bar">
+                <select id="explorerSelect"><option value="">-- Select Account --</option></select>
+                <input type="text" id="explorerInput" placeholder="Or type account ID...">
+                <button class="btn btn-primary" onclick="loadExplorer()">Explore</button>
+            </div>
+            <div id="explorerContent" style="display:none">
+                <div class="explorer-stats" id="explorerStats"></div>
+                <div class="explorer-legend">
+                    <div class="el-item"><span class="legend-dot" style="background:#ef5350"></span> Selected Account</div>
+                    <div class="el-item"><span class="legend-dot" style="background:#42a5f5"></span> Connected Account</div>
+                    <div class="el-item">&rarr; Arrow = money flow direction</div>
+                </div>
+                <div id="explorerGraph"></div>
+                <p class="section-title" style="margin-top:12px">Transaction History</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Transaction ID</th>
+                                <th>Direction</th>
+                                <th>Counterparty</th>
+                                <th>Amount</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="explorerTxBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="explorerEmpty" class="empty-state">Select an account above to view its transaction graph and details.</div>
+        </div>
+    </div>
+</div>
+
+<div class="footer">Money Muling Detection Engine &mdash; Graph-Theory Based Analysis</div>
+
+<script>
+let currentData = null;
+let currentFilter = 'all';
+
+// ── File Upload ──────────────────────────────────────────
+const fileInput = document.getElementById('fileInput');
+fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (file) {
+        document.getElementById('fileName').textContent = '📄 ' + file.name;
+        analyzeFile(file);
+    }
+});
+
+// Drag & drop
+const uploadSection = document.getElementById('uploadSection');
+uploadSection.addEventListener('dragover', (e) => { e.preventDefault(); uploadSection.classList.add('dragover'); });
+uploadSection.addEventListener('dragleave', () => uploadSection.classList.remove('dragover'));
+uploadSection.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadSection.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file && file.name.endsWith('.csv')) {
+        document.getElementById('fileName').textContent = '📄 ' + file.name;
+        analyzeFile(file);
+    }
+});
+
+function useSampleData() {
+    showLoading();
+    const formData = new FormData();
+    formData.append('use_sample', 'true');
+    fetch('/analyze', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(handleResponse)
+        .catch(err => showError([err.message]));
+}
+
+function analyzeFile(file) {
+    showLoading();
+    const formData = new FormData();
+    formData.append('file', file);
+    fetch('/analyze', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(handleResponse)
+        .catch(err => showError([err.message]));
+}
+
+function showLoading() {
+    document.getElementById('uploadSection').style.display = 'none';
+    document.getElementById('errorBox').classList.remove('active');
+    document.getElementById('results').classList.remove('active');
+    document.getElementById('loading').classList.add('active');
+}
+
+function showError(errors) {
+    document.getElementById('loading').classList.remove('active');
+    document.getElementById('uploadSection').style.display = 'block';
+    const box = document.getElementById('errorBox');
+    const list = document.getElementById('errorList');
+    list.innerHTML = errors.map(e => `<li>${e}</li>`).join('');
+    box.classList.add('active');
+}
+
+function resetUI() {
+    document.getElementById('results').classList.remove('active');
+    document.getElementById('loading').classList.remove('active');
+    document.getElementById('errorBox').classList.remove('active');
+    document.getElementById('uploadSection').style.display = 'block';
+    document.getElementById('fileName').textContent = '';
+    fileInput.value = '';
+    currentData = null;
+}
+
+function handleResponse(data) {
+    document.getElementById('loading').classList.remove('active');
+    if (data.error) {
+        showError(data.errors || ['Unknown error']);
+        return;
+    }
+    currentData = data;
+    renderResults(data);
+    document.getElementById('results').classList.add('active');
+}
+
+// ── Render Results ───────────────────────────────────────
+function renderResults(data) {
+    renderSummary(data.summary);
+    renderAccounts(data.scores);
+    renderRings(data.rings);
+    renderSmurfing(data.smurfing);
+    renderShell(data.shell_accounts);
+    renderVelocity(data.velocity || []);
+    renderLayering(data.layering || []);
+    renderStructuring(data.structuring || [], data.amount_repetition || []);
+    renderCommunities(data.communities || [], data.scc_components || []);
+    renderNewAccounts(data.new_accounts || []);
+    renderGraph(data.graph, data.rings);
+}
+
+function renderSummary(s) {
+    const grid = document.getElementById('summaryGrid');
+    grid.innerHTML = `
+        <div class="card info"><div class="value">${s.total_accounts}</div><div class="label">Total Accounts</div></div>
+        <div class="card info"><div class="value">${s.total_transactions}</div><div class="label">Transactions</div></div>
+        <div class="card high"><div class="value">${s.high_risk}</div><div class="label">High Risk</div></div>
+        <div class="card medium"><div class="value">${s.medium_risk}</div><div class="label">Medium Risk</div></div>
+        <div class="card low"><div class="value">${s.low_risk}</div><div class="label">Low Risk</div></div>
+        <div class="card info"><div class="value">${s.total_cycles}</div><div class="label">Cycles Found</div></div>
+        <div class="card info"><div class="value">${s.fan_in_hubs + s.fan_out_hubs}</div><div class="label">Smurfing Hubs</div></div>
+        <div class="card info"><div class="value">${s.shell_accounts}</div><div class="label">Shell Accounts</div></div>
+        <div class="card info"><div class="value">${s.velocity_flagged || 0}</div><div class="label">Velocity Flagged</div></div>
+        <div class="card info"><div class="value">${s.layering_chains || 0}</div><div class="label">Layering Chains</div></div>
+        <div class="card info"><div class="value">${s.structuring_flagged || 0}</div><div class="label">Structuring</div></div>
+        <div class="card info"><div class="value">${s.communities || 0}</div><div class="label">Communities</div></div>
+        <div class="card info"><div class="value">${s.new_account_bursts || 0}</div><div class="label">New Acct Bursts</div></div>
+    `;
+}
+
+function scoreBarColor(score) {
+    if (score >= 50) return '#ef5350';
+    if (score >= 25) return '#ffa726';
+    return '#66bb6a';
+}
+
+function renderAccounts(scores) {
+    const tbody = document.getElementById('accountsBody');
+    let html = '';
+    scores.forEach((s, i) => {
+        const badgeClass = s.risk_level === 'high' ? 'badge-high' : s.risk_level === 'medium' ? 'badge-medium' : 'badge-low';
+        const patterns = (s.patterns || []).map(p => `<span class="pattern-tag">${p}</span>`).join(' ');
+        html += `<tr data-risk="${s.risk_level}" data-account="${s.account_id.toLowerCase()}">
+            <td>${i + 1}</td>
+            <td><strong>${s.account_id}</strong></td>
+            <td>
+                <div class="score-bar"><div class="score-bar-fill" style="width:${s.score}%;background:${scoreBarColor(s.score)}"></div></div>
+                ${s.score.toFixed(1)}
+            </td>
+            <td><span class="badge ${badgeClass}">${s.risk_level}</span></td>
+            <td>${patterns || '<span style="color:#506680">none</span>'}</td>
+            <td>${s.ring_id || '—'}</td>
+        </tr>`;
+    });
+    tbody.innerHTML = html;
+}
+
+function filterTable() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('#accountsBody tr');
+    rows.forEach(row => {
+        const account = row.getAttribute('data-account');
+        const risk = row.getAttribute('data-risk');
+        const matchSearch = account.includes(search);
+        const matchFilter = currentFilter === 'all' || risk === currentFilter;
+        row.style.display = (matchSearch && matchFilter) ? '' : 'none';
+    });
+}
+
+function setFilter(f) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    filterTable();
+}
+
+function renderRings(rings) {
+    const container = document.getElementById('ringsContainer');
+    if (!rings || rings.length === 0) {
+        container.innerHTML = '<div class="empty-state">No fraud rings detected</div>';
+        return;
+    }
+    let html = `<p class="section-title">Detected ${rings.length} Fraud Ring(s)</p>`;
+    rings.forEach(ring => {
+        const members = ring.members.map(m => `<span class="pattern-tag">${m}</span>`).join(' ');
+        html += `<div class="ring-card">
+            <h4>${ring.ring_id}</h4>
+            <div class="ring-meta">${ring.member_count} members &bull; Risk Score: <strong style="color:#ef5350">${ring.risk_score}</strong> &bull; Pattern: ${ring.pattern_type}</div>
+            <div class="ring-members">${members}</div>
+        </div>`;
+    });
+    container.innerHTML = html;
+}
+
+function renderSmurfing(smurfing) {
+    const container = document.getElementById('smurfingContainer');
+    let html = '';
+
+    if (smurfing.fan_in.length > 0) {
+        html += '<p class="section-title">Fan-In Hubs (Collection Points)</p>';
+        smurfing.fan_in.forEach(h => {
+            html += `<div class="hub-item">
+                <div><span class="hub-name">${h.account}</span><br><span class="hub-detail">${h.counterparties} senders</span></div>
+                <div class="hub-amount">$${h.total_amount.toLocaleString()}</div>
+            </div>`;
+        });
+    }
+
+    if (smurfing.fan_out.length > 0) {
+        html += '<p class="section-title" style="margin-top:20px">Fan-Out Hubs (Distribution Points)</p>';
+        smurfing.fan_out.forEach(h => {
+            html += `<div class="hub-item">
+                <div><span class="hub-name">${h.account}</span><br><span class="hub-detail">${h.counterparties} receivers</span></div>
+                <div class="hub-amount">$${h.total_amount.toLocaleString()}</div>
+            </div>`;
+        });
+    }
+
+    if (!html) html = '<div class="empty-state">No smurfing patterns detected</div>';
+    container.innerHTML = html;
+}
+
+function renderShell(accounts) {
+    const container = document.getElementById('shellContainer');
+    if (!accounts || accounts.length === 0) {
+        container.innerHTML = '<div class="empty-state">No shell / relay accounts detected</div>';
+        return;
+    }
+    let html = `<p class="section-title">${accounts.length} Pass-Through Relay Account(s)</p>`;
+    accounts.forEach(a => {
+        html += `<div class="hub-item"><span class="hub-name">${a}</span><span class="badge badge-medium">relay</span></div>`;
+    });
+    container.innerHTML = html;
+}
+
+function renderVelocity(items) {
+    const container = document.getElementById('velocityContainer');
+    if (!items || items.length === 0) {
+        container.innerHTML = '<div class="empty-state">No rapid pass-through patterns detected</div>';
+        return;
+    }
+    let html = `<p class="section-title">${items.length} Velocity-Flagged Account(s)</p>
+    <div class="table-wrapper"><table><thead><tr>
+        <th>#</th><th>Account</th><th>Rapid Pairs</th><th>Amount-Similar</th>
+    </tr></thead><tbody>`;
+    items.forEach((v, i) => {
+        html += `<tr>
+            <td>${i+1}</td>
+            <td><strong>${v.account}</strong></td>
+            <td>${v.rapid_pairs}</td>
+            <td>${v.amount_similar}</td>
+        </tr>`;
+    });
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+}
+
+function renderLayering(chains) {
+    const container = document.getElementById('layeringContainer');
+    if (!chains || chains.length === 0) {
+        container.innerHTML = '<div class="empty-state">No layering chains detected</div>';
+        return;
+    }
+    let html = `<p class="section-title">${chains.length} Layering Chain(s)</p>`;
+    chains.forEach((c, i) => {
+        const path = (c.accounts || []).join(' &rarr; ');
+        const amounts = (c.amounts || []).map(a => '$' + a.toLocaleString()).join(' &rarr; ');
+        html += `<div class="ring-card">
+            <div class="ring-header">Chain #${i+1} &mdash; Avg Deduction: ${c.avg_deduction_pct}%</div>
+            <div class="ring-members">Path: ${path}</div>
+            <div class="ring-members" style="color:#aaa;font-size:0.85em">Amounts: ${amounts}</div>
+        </div>`;
+    });
+    container.innerHTML = html;
+}
+
+function renderStructuring(structuring, repetition) {
+    const container = document.getElementById('structuringContainer');
+    let html = '';
+
+    if (structuring && structuring.length > 0) {
+        html += `<p class="section-title">${structuring.length} Threshold-Avoidance Account(s)</p>
+        <div class="table-wrapper"><table><thead><tr>
+            <th>#</th><th>Account</th><th>Threshold</th><th>Count Below</th><th>Mean Amount</th>
+        </tr></thead><tbody>`;
+        structuring.forEach((s, i) => {
+            html += `<tr>
+                <td>${i+1}</td>
+                <td><strong>${s.account}</strong></td>
+                <td>$${Number(s.threshold).toLocaleString()}</td>
+                <td>${s.count}</td>
+                <td>$${Number(s.mean_amount).toLocaleString(undefined,{minimumFractionDigits:2})}</td>
+            </tr>`;
+        });
+        html += '</tbody></table></div>';
+    }
+
+    if (repetition && repetition.length > 0) {
+        html += `<p class="section-title" style="margin-top:24px">${repetition.length} Amount-Repetition Account(s)</p>
+        <div class="table-wrapper"><table><thead><tr>
+            <th>#</th><th>Account</th><th>Repeated Amount</th><th>Times Repeated</th>
+        </tr></thead><tbody>`;
+        repetition.forEach((r, i) => {
+            html += `<tr>
+                <td>${i+1}</td>
+                <td><strong>${r.account}</strong></td>
+                <td>$${Number(r.repeated_amount).toLocaleString(undefined,{minimumFractionDigits:2})}</td>
+                <td>${r.count}</td>
+            </tr>`;
+        });
+        html += '</tbody></table></div>';
+    }
+
+    if (!html) html = '<div class="empty-state">No structuring / threshold avoidance detected</div>';
+    container.innerHTML = html;
+}
+
+function renderCommunities(communities, sccs) {
+    const container = document.getElementById('communitiesContainer');
+    let html = '';
+
+    if (communities && communities.length > 0) {
+        html += `<p class="section-title">${communities.length} Suspicious Community Cluster(s)</p>`;
+        communities.forEach((c, i) => {
+            html += `<div class="ring-card">
+                <div class="ring-header">Community #${i+1} &mdash; ${c.members.length} members, density ${c.density}</div>
+                <div class="ring-members">${c.members.join(', ')}</div>
+                <div class="ring-members" style="color:#aaa;font-size:0.85em">Internal flow: $${Number(c.internal_flow).toLocaleString()}</div>
+            </div>`;
+        });
+    }
+
+    if (sccs && sccs.length > 0) {
+        html += `<p class="section-title" style="margin-top:24px">${sccs.length} Strongly Connected Component(s)</p>`;
+        sccs.forEach((c, i) => {
+            html += `<div class="ring-card">
+                <div class="ring-header">SCC #${i+1} &mdash; ${c.members.length} members</div>
+                <div class="ring-members">${c.members.join(', ')}</div>
+            </div>`;
+        });
+    }
+
+    if (!html) html = '<div class="empty-state">No suspicious communities detected</div>';
+    container.innerHTML = html;
+}
+
+function renderNewAccounts(accounts) {
+    const container = document.getElementById('newAccountsContainer');
+    if (!accounts || accounts.length === 0) {
+        container.innerHTML = '<div class="empty-state">No new-account burst patterns detected</div>';
+        return;
+    }
+    let html = `<p class="section-title">${accounts.length} New-Account Burst(s)</p>
+    <div class="table-wrapper"><table><thead><tr>
+        <th>#</th><th>Account</th><th>Active Days</th><th>Transactions</th><th>Total Volume</th>
+    </tr></thead><tbody>`;
+    accounts.forEach((a, i) => {
+        html += `<tr>
+            <td>${i+1}</td>
+            <td><strong>${a.account}</strong></td>
+            <td>${a.active_days}</td>
+            <td>${a.tx_count}</td>
+            <td>$${Number(a.total_volume).toLocaleString(undefined,{minimumFractionDigits:2})}</td>
+        </tr>`;
+    });
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+}
+
+// ── Interactive Graph Visualization ──────────────────────
+let visNetwork = null;
+let visNodes = null;
+let visEdges = null;
+let graphNodeDataMap = {};
+
+// Ring color palette
+const RING_COLORS = ['#e040fb','#ff6d00','#00e5ff','#76ff03','#ffd740','#ff4081','#448aff','#69f0ae'];
+
+function getNodeColor(node, rings) {
+    // Ring members get distinct ring colors
+    if (node.ring_id) {
+        const ringIdx = (rings || []).findIndex(r => r.ring_id === node.ring_id);
+        if (ringIdx >= 0) return RING_COLORS[ringIdx % RING_COLORS.length];
+        return '#e040fb';
+    }
+    if (node.is_shell) return '#00e5ff';
+    if (node.risk === 'high') return '#ef5350';
+    if (node.risk === 'medium') return '#ffa726';
+    return '#66bb6a';
+}
+
+function getNodeSize(node) {
+    // Base size + score-proportional scaling
+    const base = 8;
+    const extra = node.score / 5;
+    if (node.is_cycle || node.ring_id) return base + extra + 8;
+    if (node.risk === 'high') return base + extra + 5;
+    return base + extra;
+}
+
+function getNodeBorder(node) {
+    if (node.ring_id) return { width: 3, color: '#ffffff' };
+    if (node.is_cycle) return { width: 2, color: '#ff8a80' };
+    if (node.risk === 'high') return { width: 2, color: '#ef5350' };
+    return { width: 1, color: '#2a4a6b' };
+}
+
+function renderGraph(graphData, rings) {
+    if (!graphData) return;
+    graphNodeDataMap = {};
+    const container = document.getElementById('graphContainer');
+
+    // Build vis.js nodes
+    const nodes = graphData.nodes.map(n => {
+        graphNodeDataMap[n.id] = n;
+        const color = getNodeColor(n, rings);
+        const sz = getNodeSize(n);
+        const border = getNodeBorder(n);
+        return {
+            id: n.id,
+            label: n.id,
+            size: sz,
+            color: {
+                background: color,
+                border: border.color,
+                highlight: { background: '#fff', border: color },
+                hover: { background: color, border: '#fff' },
+            },
+            borderWidth: border.width,
+            font: {
+                color: '#c0cede',
+                size: n.risk === 'high' || n.ring_id ? 12 : 9,
+                strokeWidth: 2,
+                strokeColor: '#0a1520',
+            },
+            shadow: n.risk === 'high',
+        };
+    });
+
+    // Build vis.js edges
+    const edges = graphData.edges.map(e => {
+        // Check if both ends are in same ring
+        const fromNode = graphNodeDataMap[e.from];
+        const toNode = graphNodeDataMap[e.to];
+        const inRing = fromNode && toNode && fromNode.ring_id && fromNode.ring_id === toNode.ring_id;
+        const ringIdx = inRing ? (rings || []).findIndex(r => r.ring_id === fromNode.ring_id) : -1;
+        return {
+            from: e.from,
+            to: e.to,
+            arrows: { to: { enabled: true, scaleFactor: 0.5 } },
+            color: {
+                color: inRing ? RING_COLORS[ringIdx % RING_COLORS.length] : '#1e3a5f',
+                highlight: '#4fc3f7',
+                hover: '#4fc3f7',
+                opacity: inRing ? 0.9 : 0.4,
+            },
+            width: inRing ? 2.5 : Math.min(1 + e.count * 0.3, 4),
+            title: `$${e.amount.toLocaleString()} (${e.count} txn${e.count > 1 ? 's' : ''})`,
+        };
+    });
+
+    visNodes = new vis.DataSet(nodes);
+    visEdges = new vis.DataSet(edges);
+
+    const options = {
+        physics: {
+            enabled: true,
+            barnesHut: {
+                gravitationalConstant: -3000,
+                centralGravity: 0.3,
+                springLength: 120,
+                springConstant: 0.04,
+                damping: 0.09,
+            },
+            stabilization: { iterations: 200 },
+        },
+        interaction: {
+            hover: true,
+            tooltipDelay: 100,
+            zoomView: true,
+            dragView: true,
+        },
+        layout: { improvedLayout: true },
+    };
+
+    visNetwork = new vis.Network(container, { nodes: visNodes, edges: visEdges }, options);
+
+    // Tooltip on hover
+    const tooltip = document.getElementById('graphTooltip');
+    visNetwork.on('hoverNode', function(params) {
+        const nodeId = params.node;
+        const n = graphNodeDataMap[nodeId];
+        if (!n) return;
+        const patterns = (n.patterns || []).map(p => `<span class="pattern-tag">${p}</span>`).join(' ') || 'none';
+        tooltip.innerHTML = `
+            <h4>${n.id}</h4>
+            <div class="tt-row"><span class="tt-label">Score</span><span class="tt-value" style="color:${scoreBarColor(n.score)}">${n.score.toFixed(1)}</span></div>
+            <div class="tt-row"><span class="tt-label">Risk</span><span class="tt-value">${n.risk.toUpperCase()}</span></div>
+            <div class="tt-row"><span class="tt-label">Total Sent</span><span class="tt-value">$${n.total_sent.toLocaleString()}</span></div>
+            <div class="tt-row"><span class="tt-label">Total Received</span><span class="tt-value">$${n.total_received.toLocaleString()}</span></div>
+            <div class="tt-row"><span class="tt-label">Net Flow</span><span class="tt-value">$${n.net_flow.toLocaleString()}</span></div>
+            <div class="tt-row"><span class="tt-label">Transactions</span><span class="tt-value">${n.tx_count}</span></div>
+            ${n.ring_id ? `<div class="tt-row"><span class="tt-label">Ring</span><span class="tt-value" style="color:#e040fb">${n.ring_id}</span></div>` : ''}
+            <div style="margin-top:6px">${patterns}</div>
+        `;
+        tooltip.style.display = 'block';
+        // Position near the mouse (relative to parent)
+        const rect = container.getBoundingClientRect();
+        tooltip.style.left = (params.event.center.x - rect.left + 15) + 'px';
+        tooltip.style.top = (params.event.center.y - rect.top + 15) + 'px';
+    });
+
+    visNetwork.on('blurNode', function() {
+        tooltip.style.display = 'none';
+    });
+
+    // Click to keep tooltip
+    visNetwork.on('click', function(params) {
+        if (params.nodes.length > 0) {
+            const nodeId = params.nodes[0];
+            const n = graphNodeDataMap[nodeId];
+            if (!n) return;
+            const patterns = (n.patterns || []).map(p => `<span class="pattern-tag">${p}</span>`).join(' ') || 'none';
+            tooltip.innerHTML = `
+                <h4>${n.id}</h4>
+                <div class="tt-row"><span class="tt-label">Score</span><span class="tt-value" style="color:${scoreBarColor(n.score)}">${n.score.toFixed(1)}</span></div>
+                <div class="tt-row"><span class="tt-label">Risk</span><span class="tt-value">${n.risk.toUpperCase()}</span></div>
+                <div class="tt-row"><span class="tt-label">Total Sent</span><span class="tt-value">$${n.total_sent.toLocaleString()}</span></div>
+                <div class="tt-row"><span class="tt-label">Total Received</span><span class="tt-value">$${n.total_received.toLocaleString()}</span></div>
+                <div class="tt-row"><span class="tt-label">Net Flow</span><span class="tt-value">$${n.net_flow.toLocaleString()}</span></div>
+                <div class="tt-row"><span class="tt-label">Transactions</span><span class="tt-value">${n.tx_count}</span></div>
+                ${n.ring_id ? `<div class="tt-row"><span class="tt-label">Ring</span><span class="tt-value" style="color:#e040fb">${n.ring_id}</span></div>` : ''}
+                <div style="margin-top:6px">${patterns}</div>
+            `;
+            tooltip.style.display = 'block';
+            const rect = container.getBoundingClientRect();
+            const domPos = params.pointer.DOM;
+            tooltip.style.left = (domPos.x + 15) + 'px';
+            tooltip.style.top = (domPos.y + 15) + 'px';
+        } else {
+            tooltip.style.display = 'none';
+        }
+    });
+}
+
+function graphHighlight(mode) {
+    if (!visNodes || !visNetwork) return;
+    // Update filter button styles
+    document.querySelectorAll('.graph-controls .filter-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+
+    visNodes.forEach(function(visNode) {
+        const n = graphNodeDataMap[visNode.id];
+        if (!n) return;
+        let opacity = 1;
+        let hidden = false;
+        if (mode === 'high' && n.risk !== 'high') opacity = 0.1;
+        if (mode === 'rings' && !n.ring_id) opacity = 0.1;
+        if (mode === 'shell' && !n.is_shell) opacity = 0.1;
+
+        visNodes.update({
+            id: visNode.id,
+            opacity: opacity,
+            font: { ...visNode.font, color: opacity < 1 ? 'rgba(192,206,222,0.15)' : '#c0cede' },
+        });
+    });
+}
+
+// ── Tabs ─────────────────────────────────────────────────
+function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('tab-' + name).classList.add('active');
+    // Re-fit graph when switching to graph tab
+    if (name === 'graph' && visNetwork) {
+        setTimeout(() => visNetwork.fit(), 100);
+    }
+    // Populate account dropdown when opening explorer tab
+    if (name === 'explorer') {
+        populateExplorerDropdown();
+        if (explorerNetwork) setTimeout(() => explorerNetwork.fit(), 100);
+    }
+}
+
+// ── Account Explorer ─────────────────────────────────────
+let explorerNetwork = null;
+
+function populateExplorerDropdown() {
+    fetch('/account-list', { method: 'POST', headers: {'Content-Type':'application/json'}, body: '{}' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) return;
+            const sel = document.getElementById('explorerSelect');
+            sel.innerHTML = '<option value="">-- Select Account --</option>';
+            (data.accounts || []).forEach(a => {
+                sel.innerHTML += `<option value="${a}">${a}</option>`;
+            });
+        });
+}
+
+function loadExplorer() {
+    const fromSelect = document.getElementById('explorerSelect').value;
+    const fromInput  = document.getElementById('explorerInput').value.trim();
+    const accountId  = fromInput || fromSelect;
+    if (!accountId) return;
+
+    fetch('/account-explorer', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ account_id: accountId, use_sample: true }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) {
+            document.getElementById('explorerContent').style.display = 'none';
+            document.getElementById('explorerEmpty').textContent = (data.errors || ['Not found']).join(', ');
+            document.getElementById('explorerEmpty').style.display = 'block';
+            return;
+        }
+        document.getElementById('explorerEmpty').style.display = 'none';
+        document.getElementById('explorerContent').style.display = 'block';
+        renderExplorerStats(data.stats);
+        renderExplorerGraph(data);
+        renderExplorerTable(data.transactions);
+    })
+    .catch(err => {
+        document.getElementById('explorerEmpty').textContent = err.message;
+        document.getElementById('explorerEmpty').style.display = 'block';
+    });
+}
+
+function renderExplorerStats(s) {
+    const grid = document.getElementById('explorerStats');
+    const netColor = s.net_balance >= 0 ? '#66bb6a' : '#ef5350';
+    grid.innerHTML = `
+        <div class="stat-card sent"><div class="sv">$${s.total_sent.toLocaleString()}</div><div class="sl">Total Sent</div></div>
+        <div class="stat-card recv"><div class="sv">$${s.total_received.toLocaleString()}</div><div class="sl">Total Received</div></div>
+        <div class="stat-card net"><div class="sv" style="color:${netColor}">$${s.net_balance.toLocaleString()}</div><div class="sl">Net Balance</div></div>
+        <div class="stat-card"><div class="sv">${s.num_transactions}</div><div class="sl">Transactions</div></div>
+        <div class="stat-card"><div class="sv">${s.connected_accounts}</div><div class="sl">Connected Accts</div></div>
+        <div class="stat-card"><div class="sv">${s.in_degree}</div><div class="sl">In-Degree</div></div>
+        <div class="stat-card"><div class="sv">${s.out_degree}</div><div class="sl">Out-Degree</div></div>
+    `;
+}
+
+function renderExplorerGraph(data) {
+    const container = document.getElementById('explorerGraph');
+    const nodes = data.nodes.map(n => ({
+        id: n.id,
+        label: n.id,
+        color: {
+            background: n.is_center ? '#ef5350' : '#42a5f5',
+            border: n.is_center ? '#ff8a80' : '#1e88e5',
+            highlight: { background: '#fff', border: n.is_center ? '#ef5350' : '#42a5f5' },
+            hover:      { background: n.is_center ? '#ef5350' : '#42a5f5', border: '#fff' },
+        },
+        size: n.is_center ? 30 : 18,
+        borderWidth: n.is_center ? 3 : 1.5,
+        font: {
+            color: '#e0e6ed',
+            size: n.is_center ? 14 : 11,
+            strokeWidth: 2,
+            strokeColor: '#0a1520',
+            bold: n.is_center,
+        },
+        shadow: n.is_center,
+        shape: n.is_center ? 'dot' : 'dot',
+    }));
+
+    const edges = data.edges.map(e => ({
+        from: e.from,
+        to: e.to,
+        label: '$' + e.amount.toLocaleString(),
+        arrows: { to: { enabled: true, scaleFactor: 0.7 } },
+        color: { color: '#2a5a8a', highlight: '#4fc3f7', hover: '#4fc3f7' },
+        width: 2,
+        font: { color: '#7a8a9e', size: 10, strokeWidth: 0, align: 'top' },
+        title: `TXN: ${e.transaction_id}\nTime: ${e.timestamp}\nAmount: $${e.amount.toLocaleString()}`,
+    }));
+
+    const vNodes = new vis.DataSet(nodes);
+    const vEdges = new vis.DataSet(edges);
+
+    const options = {
+        physics: {
+            enabled: true,
+            barnesHut: {
+                gravitationalConstant: -4000,
+                centralGravity: 0.5,
+                springLength: 180,
+                springConstant: 0.06,
+                damping: 0.12,
+            },
+            stabilization: { iterations: 150 },
+        },
+        interaction: {
+            hover: true,
+            tooltipDelay: 80,
+            zoomView: true,
+            dragView: true,
+            dragNodes: true,
+        },
+        layout: { improvedLayout: true },
+    };
+
+    if (explorerNetwork) explorerNetwork.destroy();
+    explorerNetwork = new vis.Network(container, { nodes: vNodes, edges: vEdges }, options);
+}
+
+function renderExplorerTable(txns) {
+    const tbody = document.getElementById('explorerTxBody');
+    let html = '';
+    (txns || []).forEach((t, i) => {
+        const dirBadge = t.direction === 'SENT'
+            ? '<span class="badge badge-high">SENT</span>'
+            : '<span class="badge badge-low">RECEIVED</span>';
+        html += `<tr>
+            <td>${i + 1}</td>
+            <td>${t.transaction_id}</td>
+            <td>${dirBadge}</td>
+            <td><strong>${t.counterparty}</strong></td>
+            <td>$${t.amount.toLocaleString(undefined,{minimumFractionDigits:2})}</td>
+            <td>${t.timestamp}</td>
+        </tr>`;
+    });
+    tbody.innerHTML = html;
+}
+
+// ── Download ─────────────────────────────────────────────
+function downloadReport() {
+    if (!currentData || !currentData.report_json) return;
+    const blob = new Blob([currentData.report_json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'detection_report.json';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

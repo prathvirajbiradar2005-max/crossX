@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💎 Money Muling Detection Engine - Advanced Analytics</title>
+    <script src="https://unpkg.com/vis-network@9.1.6/standalone/umd/vis-network.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+        
+        body { font-family: 'Poppins', sans-serif; scroll-behavior: smooth; }
+        
+        /* ═══════════════════════════════════════════════════════════════ */
+        /* ADVANCED ANIMATIONS */
+        /* ═══════════════════════════════════════════════════════════════ */
+        
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(-40px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideInLeft { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes pulse-glow { 0%, 100% { filter: drop-shadow(0 0 8px rgba(79, 195, 247, 0.3)); } 50% { filter: drop-shadow(0 0 20px rgba(79, 195, 247, 0.6)); } }
+        @keyframes shimmer { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
+        @keyframes bounce-in { 0% { opacity: 0; transform: scale(0.8) translateY(20px); } 50% { opacity: 1; } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+        @keyframes float-in { 0% { opacity: 0; transform: translateY(20px) rotateX(20deg); } 100% { opacity: 1; transform: translateY(0) rotateX(0); } }
+        @keyframes gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        @keyframes neon-glow { 0%, 100% { text-shadow: 0 0 7px #fff, 0 0 10px #4fc3f7, 0 0 21px #4fc3f7; filter: brightness(1.2); } 50% { text-shadow: 0 0 20px #fff, 0 0 30px #4fc3f7, 0 0 40px #4fc3f7; filter: brightness(1.4); } }
+        @keyframes aurora { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        
+        .animate-fadeInUp { animation: fadeInUp 0.6s ease-out; }
+        .animate-slideInRight { animation: slideInRight 0.6s ease-out; }
+        .animate-slideInLeft { animation: slideInLeft 0.6s ease-out; }
+        .animate-pulse-glow { animation: pulse-glow 2.5s ease-in-out infinite; }
+        .animate-shimmer { animation: shimmer 2s ease-in-out infinite; }
+        .animate-bounce-in { animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        .animate-float-in { animation: float-in 0.8s ease-out; }
+        .animate-gradient-shift { animation: gradient-shift 6s ease-in-out infinite; }
+        .animate-neon-glow { animation: neon-glow 2s ease-in-out infinite; }
+        
+        /* Glass morphism */
+        .glass {
+            background: rgba(15, 25, 35, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(79, 195, 247, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass:hover {
+            background: rgba(15, 25, 35, 0.6);
+            border-color: rgba(79, 195, 247, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px rgba(79, 195, 247, 0.1);
+        }
+        
+        /* Gradient backgrounds */
+        .bg-aurora { background: linear-gradient(-45deg, #ee7752, #4fc3f7, #1e90ff, #764ba2); background-size: 400% 400%; animation: aurora 15s ease infinite; }
+        
+        /* Tabs with underline animation */
+        .tab-active::after { content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, #4fc3f7, #29b6f6); animation: fadeInUp 0.3s ease-out; }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 25, 35, 0.5); }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #4fc3f7, #29b6f6); border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #29b6f6, #1e88e5); }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 text-gray-100 min-h-screen">
+
+<!-- HEADER -->
+<header class="animate-fadeInUp border-b border-cyan-500/20 bg-gradient-to-r from-slate-900/80 via-blue-900/50 to-slate-900/80 backdrop-blur-lg sticky top-0 z-50 shadow-2xl shadow-cyan-500/10">
+    <div class="max-w-7xl mx-auto px-6 py-6 flex items-center gap-4">
+        <div class="text-4xl animate-pulse-glow">💎</div>
+        <div>
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent animate-neon-glow">Money Muling Detection Engine</h1>
+            <p class="text-sm text-gray-400 mt-1"><span class="text-cyan-300">●</span> Advanced Graph-Theory Fraud Detection</p>
+        </div>
+    </div>
+</header>
+
+<!-- MAIN CONTAINER -->
+<div class="max-w-7xl mx-auto px-6 py-10">
+
+    <!-- UPLOAD SECTION -->
+    <div id="uploadSection" class="animate-slideInRight backdrop-blur-xl glass rounded-2xl p-12 text-center mb-8 border-2 border-dashed border-cyan-400/30 hover:border-cyan-400/60 transition-all cursor-pointer group">
+        <div class="text-5xl mb-4 group-hover:scale-110 transition-transform">📊</div>
+        <h2 class="text-2xl font-bold text-cyan-300 mb-2">Upload Transaction Data</h2>
+        <p class="text-gray-300 mb-6">CSV format: <code class="bg-slate-900/50 px-2 py-1 rounded text-cyan-200 font-mono text-sm">transaction_id, sender_id, receiver_id, amount, timestamp</code></p>
+        <div class="flex gap-4 justify-center flex-wrap">
+            <label class="bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-900 px-8 py-3 rounded-lg font-bold cursor-pointer hover:shadow-lg hover:shadow-cyan-500/50 hover:-translate-y-1 transition-all">
+                📁 Choose CSV File
+                <input type="file" id="fileInput" accept=".csv" class="hidden">
+            </label>
+            <button onclick="useSampleData()" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:shadow-lg hover:shadow-purple-500/50 hover:-translate-y-1 transition-all">⚡ Use Sample Data</button>
+        </div>
+        <div id="fileName" class="text-cyan-300 text-sm mt-4"></div>
+    </div>
+
+    <!-- ERROR BOX -->
+    <div id="errorBox" class="hidden animate-slideInLeft mb-6 glass border-2 border-red-500/50 rounded-xl p-6 bg-red-500/5">
+        <h3 class="text-red-400 font-bold mb-3">⚠️ Validation Error</h3>
+        <ul id="errorList" class="text-red-300 text-sm space-y-1 list-disc list-inside"></ul>
+    </div>
+
+    <!-- LOADING SPINNER -->
+    <div id="loading" class="hidden text-center py-20">
+        <div class="inline-block">
+            <div class="w-16 h-16 border-4 border-slate-600 border-t-cyan-400 rounded-full animate-spin mb-6 shadow-lg shadow-cyan-500/30"></div>
+            <p class="text-xl text-gray-300 font-semibold">Analyzing transactions<span class="animate-bounce">...</span></p>
+            <p class="text-gray-400 text-sm mt-2">detecting fraud patterns with AI</p>
+        </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="results" class="hidden space-y-8">
+        
+        <!-- SUMMARY GRID -->
+        <div id="summaryGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 animate-fadeInUp"></div>
+
+        <!-- ACTION BAR -->
+        <div class="flex gap-3 flex-wrap justify-start animate-slideInRight">
+            <button onclick="downloadReport()" class="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-lg font-bold hover:shadow-lg hover:shadow-green-500/50 hover:-translate-y-1 transition-all">⬇️ Download Report</button>
+            <button onclick="resetUI()" class="bg-gradient-to-r from-gray-700 to-gray-600 text-white px-6 py-3 rounded-lg font-bold hover:shadow-lg hover:shadow-gray-500/50 hover:-translate-y-1 transition-all">↻ New Analysis</button>
+        </div>
+
+        <!-- TABS -->
+        <div class="animate-fadeInUp">
+            <div class="flex gap-2 border-b border-cyan-500/20 overflow-x-auto pb-2 mb-6">
+                <button onclick="switchTab('graph')" class="tab px-6 py-3 font-semibold text-gray-300 hover:text-cyan-300 relative transition-colors whitespace-nowrap">📊 Graph</button>
+                <button onclick="switchTab('accounts')" class="tab active px-6 py-3 font-semibold text-cyan-300 relative transition-colors whitespace-nowrap tab-active">👥 Accounts</button>
+                <button onclick="switchTab('rings')" class="tab px-6 py-3 font-semibold text-gray-300 hover:text-cyan-300 relative transition-colors whitespace-nowrap">🔄 Rings</button>
+                <button onclick="switchTab('smurfing')" class="tab px-6 py-3 font-semibold text-gray-300 hover:text-cyan-300 relative transition-colors whitespace-nowrap">🐟 Smurfing</button>
+                <button onclick="switchTab('shell')" class="tab px-6 py-3 font-semibold text-gray-300 hover:text-cyan-300 relative transition-colors whitespace-nowrap">🔗 Shells</button>
+                <button onclick="switchTab('velocity')" class="tab px-6 py-3 font-semibold text-gray-300 hover:text-cyan-300 relative transition-colors whitespace-nowrap">⚡ Velocity</button>
+                <button onclick="switchTab('layering')" class="tab px-6 py-3 font-semibold text-gray-300 hover:text-cyan-300 relative transition-colors whitespace-nowrap">📚 Layering</button>
+                <button onclick="switchTab('structuring')" class="tab px-6 py-3 font-semibold text-gray-300 hover:text-cyan-300 relative transition-colors whitespace-nowrap">💰 Structure</button>
+                <button onclick="switchTab('communities')" class="tab px-6 py-3 font-semibold text-gray-300 hover:text-cyan-300 relative transition-colors whitespace-nowrap">🌐 Communities</button>
+                <button onclick="switchTab('newaccounts')" class="tab px-6 py-3 font-semibold text-gray-300 hover:text-cyan-300 relative transition-colors whitespace-nowrap">✨ New</button>
+                <button onclick="switchTab('explorer')" class="tab px-6 py-3 font-semibold text-gray-300 hover:text-cyan-300 relative transition-colors whitespace-nowrap">🔍 Explorer</button>
+            </div>
+
+            <!-- TAB CONTENTS - Simple placeholders for now -->
+            <div id="tab-graph" class="tab-content hidden glass rounded-xl p-6"></div>
+            <div id="tab-accounts" class="tab-content glass rounded-xl p-6"></div>
+            <div id="tab-rings" class="tab-content hidden glass rounded-xl p-6"></div>
+            <div id="tab-smurfing" class="tab-content hidden glass rounded-xl p-6"></div>
+            <div id="tab-shell" class="tab-content hidden glass rounded-xl p-6"></div>
+            <div id="tab-velocity" class="tab-content hidden glass rounded-xl p-6"></div>
+            <div id="tab-layering" class="tab-content hidden glass rounded-xl p-6"></div>
+            <div id="tab-structuring" class="tab-content hidden glass rounded-xl p-6"></div>
+            <div id="tab-communities" class="tab-content hidden glass rounded-xl p-6"></div>
+            <div id="tab-newaccounts" class="tab-content hidden glass rounded-xl p-6"></div>
+            <div id="tab-explorer" class="tab-content hidden glass rounded-xl p-6"></div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer class="border-t border-cyan-500/20 bg-gradient-to-t from-slate-950 to-transparent mt-20 py-8 text-center text-gray-500 text-sm">
+    <p>💎 Money Muling Detection Engine — Advanced Graph-Theory Analysis</p>
+    <p class="mt-2 text-gray-600">Powered by NetworkX • PyVis • Tailwind CSS</p>
+</footer>
+
+<script>
+// Import the original JavaScript code here (keep all the existing functions)
+let currentData = null;
+let currentFilter = 'all';
+
+// [INCLUDE ALL EXISTING JAVASCRIPT FROM ORIGINAL FILE]
+</script>
+
+</body>
+</html>

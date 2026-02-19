@@ -3,10 +3,18 @@ sample_data.py — Generate realistic synthetic transaction data that
 contains money-muling patterns for demonstration and testing.
 
 Patterns embedded:
-- Circular routing (A→B→C→A)
-- Smurfing fan-in / fan-out
-- Shell / pass-through relay chains
-- Normal legitimate traffic as background noise
+ 1. Circular routing (A→B→C→A)
+ 2. Rapid pass-through / velocity chains
+ 3. Layering (decreasing amounts through chain)
+ 4. Smurfing fan-in (12 mules → 1 collector)
+ 5. Smurfing fan-out (1 distributor → 11 recipients)
+ 6. Amount consistency (near-zero retention)
+ 7. Low-entropy counterparty patterns
+ 8. New-account burst (account active < 2 days, high volume)
+ 9. Community cluster (tight group with many internal txns)
+10. Structuring / threshold avoidance (amounts just below $10 000)
+11. Shell / pass-through relay chains
+12. Normal legitimate traffic as background noise
 """
 
 from __future__ import annotations
@@ -136,6 +144,69 @@ def generate_sample_csv(
         for emp in employees:
             _add_tx(merchant, emp, round(rng.uniform(2800, 3200), 2), t)
             t += timedelta(seconds=rng.randint(1, 10))
+
+    # ── 7. Rapid pass-through / velocity (Pattern #2) ───────────────────
+    # Money hits VELOCITY_B and leaves within minutes to VELOCITY_C
+    velocity_chain = ["VELOCITY_A", "VELOCITY_B", "VELOCITY_C"]
+    t = base_time + timedelta(days=8, hours=15)
+    for _ in range(4):   # 4 rapid in→out pairs
+        amt = round(rng.uniform(3000, 3200), 2)
+        _add_tx(velocity_chain[0], velocity_chain[1], amt, t)
+        # Outbound within 5-15 min — highly suspicious
+        _add_tx(velocity_chain[1], velocity_chain[2],
+                round(amt * rng.uniform(0.94, 0.99), 2),
+                t + timedelta(minutes=rng.randint(5, 15)))
+        t += timedelta(hours=rng.randint(2, 6))
+
+    # ── 8. Layering with decreasing amounts (Pattern #3) ────────────────
+    layer_chain = ["LAYER_L01", "LAYER_L02", "LAYER_L03", "LAYER_L04", "LAYER_L05"]
+    t = base_time + timedelta(days=12, hours=10)
+    lay_amt = 12000.0
+    for i in range(len(layer_chain) - 1):
+        _add_tx(layer_chain[i], layer_chain[i + 1], round(lay_amt, 2), t)
+        lay_amt *= (1 - rng.uniform(0.03, 0.06))    # 3-6 % commission deduction
+        t += timedelta(hours=rng.randint(1, 4))
+    # Second layering pass
+    t += timedelta(days=3)
+    lay_amt = 9500.0
+    for i in range(len(layer_chain) - 1):
+        _add_tx(layer_chain[i], layer_chain[i + 1], round(lay_amt, 2), t)
+        lay_amt *= (1 - rng.uniform(0.03, 0.06))
+        t += timedelta(hours=rng.randint(1, 3))
+
+    # ── 9. Structuring / threshold avoidance (Pattern #10) ──────────────
+    # Repeated amounts just below $10 000 AML threshold
+    structurer = "STRUCT_SENDER"
+    struct_receivers = [f"STRUCT_R{i:02d}" for i in range(1, 7)]
+    t = base_time + timedelta(days=6, hours=9)
+    for r in struct_receivers:
+        amt = round(rng.uniform(9600, 9990), 2)    # conspicuously just under $10 000
+        _add_tx(structurer, r, amt, t)
+        t += timedelta(hours=rng.randint(4, 12))
+
+    # ── 10. New account burst (Pattern #8) ───────────────────────────────
+    # Account created on day 58, immediately processes huge volume
+    burst_acct = "NEWBURST_01"
+    t = base_time + timedelta(days=58, hours=8)
+    for i in range(8):
+        peer = f"BURST_PEER_{i:02d}"
+        _add_tx(peer, burst_acct, round(rng.uniform(2000, 4000), 2), t)
+        t += timedelta(minutes=rng.randint(20, 60))
+    # Immediately distribute
+    t += timedelta(hours=1)
+    for i in range(6):
+        _add_tx(burst_acct, f"BURST_OUT_{i:02d}",
+                round(rng.uniform(1500, 3500), 2), t)
+        t += timedelta(minutes=rng.randint(10, 40))
+
+    # ── 11. Tight community cluster (Pattern #9) ────────────────────────
+    # 5 accounts that ONLY transact among themselves — a suspicious cluster
+    cluster = [f"CLUST_{i:02d}" for i in range(1, 6)]
+    t = base_time + timedelta(days=30, hours=10)
+    for _ in range(20):       # 20 internal transactions
+        s, r = rng.sample(cluster, 2)
+        _add_tx(s, r, round(rng.uniform(500, 2000), 2), t)
+        t += timedelta(hours=rng.randint(1, 8))
 
     # ── Build DataFrame ──────────────────────────────────────────────────
     df = pd.DataFrame(rows)

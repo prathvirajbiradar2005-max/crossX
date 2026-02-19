@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💎 Money Muling Detection - v2 Explainable AI</title>
+    <script src="https://unpkg.com/vis-network@9.1.6/standalone/umd/vis-network.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; scrollbar-gutter: stable; }
+        body { font-family: 'Poppins', sans-serif; }
+        body.modal-open { overflow: hidden; }
+        
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse-glow { 0%, 100% { filter: drop-shadow(0 0 8px rgba(79, 195, 247, 0.3)); } 50% { filter: drop-shadow(0 0 25px rgba(79, 195, 247, 0.7)); } }
+        @keyframes bounce-in { 0% { opacity: 0; transform: scale(0.8) translateY(25px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+        
+        .animate-fadeInUp { animation: fadeInUp 0.6s ease-out; }
+        .animate-pulse-glow { animation: pulse-glow 2.5s ease-in-out infinite; }
+        .animate-bounce-in { animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        
+        .glass { background: rgba(15, 25, 35, 0.4); backdrop-filter: blur(10px); border: 1px solid rgba(79, 195, 247, 0.1); transition: all 0.3s ease; }
+        .glass:hover { background: rgba(15, 25, 35, 0.6); border-color: rgba(79, 195, 247, 0.3); transform: translateY(-2px); }
+        
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; animation: fadeInUp 0.3s ease; overflow: hidden; }
+        .modal.active { display: flex; }
+        .modal-content { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); border-radius: 16px; max-width: 700px; width: 90%; max-height: 90vh; overflow-y: auto; overflow-x: hidden; border: 1px solid rgba(79, 195, 247, 0.2); padding: 32px; display: flex; flex-direction: column; scrollbar-width: thin; scrollbar-color: #4fc3f7 #0a1520; }
+        .modal-content::-webkit-scrollbar { width: 8px; }
+        .modal-content::-webkit-scrollbar-track { background: #0a1520; border-radius: 10px; }
+        .modal-content::-webkit-scrollbar-thumb { background: #4fc3f7; border-radius: 10px; }
+        .modal-content::-webkit-scrollbar-thumb:hover { background: #81d4fa; }
+        
+        .risk-badge { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .risk-high { background: rgba(239, 83, 80, 0.2); color: #ef5350; }
+        .risk-medium { background: rgba(255, 167, 38, 0.2); color: #ffa726; }
+        .risk-low { background: rgba(102, 187, 106, 0.2); color: #66bb6a; }
+        
+        .score-circle { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 800; border: 3px solid #4fc3f7; }
+        .score-circle.high { border-color: #ef5350; color: #ef5350; }
+        .score-circle.medium { border-color: #ffa726; color: #ffa726; }
+        .score-circle.low { border-color: #66bb6a; color: #66bb6a; }
+        
+        .tab { border-b-2 border-transparent; }
+        .tab.active { border-b-color: #4fc3f7; }
+        
+        .gradient-bg { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 25%, #0f172a 50%, #1e1b4b 75%, #0f172a 100%); background-size: 400% 400%; animation: gradient-shift 15s ease infinite; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        .graph-tooltip { position: absolute; pointer-events: none; z-index: 100; background: rgba(10, 20, 35, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(79, 195, 247, 0.35); border-radius: 10px; padding: 14px 18px; font-size: 12px; color: #e0e6ed; max-width: 320px; min-width: 200px; box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 15px rgba(79,195,247,0.15); opacity: 0; transition: opacity 0.15s ease; line-height: 1.5; }
+        .graph-tooltip.visible { opacity: 1; }
+        .graph-tooltip .tt-title { font-size: 14px; font-weight: 700; color: #4fc3f7; margin-bottom: 8px; }
+        .graph-tooltip .tt-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid rgba(79,195,247,0.08); }
+        .graph-tooltip .tt-label { color: #7a8a9e; font-size: 11px; }
+        .graph-tooltip .tt-value { color: #e0e6ed; font-weight: 600; font-size: 11px; }
+        .graph-tooltip .tt-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; margin-top: 6px; }
+        .graph-tooltip .tt-patterns { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+        .graph-tooltip .tt-patterns span { background: rgba(79,195,247,0.12); color: #81d4fa; padding: 2px 6px; border-radius: 4px; font-size: 9px; }
+        .graph-tooltip .tt-edge-arrow { text-align: center; font-size: 16px; color: #4fc3f7; margin: 4px 0; }
+        @keyframes gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    </style>
+</head>
+<body class="gradient-bg text-gray-100">
+
+<!-- MODAL -->
+<div id="detailModal" class="modal">
+    <div class="modal-content rounded-2xl">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-shrink:0">
+            <div style="flex:1"></div>
+            <button onclick="closeModal()" style="background:none;border:none;font-size:28px;color:#666;cursor:pointer;padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s">✕</button>
+        </div>
+        <div id="modalBody" style="overflow-y: auto; flex: 1; padding-right: 8px;"></div>
+    </div>
+</div>
+
+<!-- HEADER -->
+<header class="animate-fadeInUp border-b border-cyan-500/20 bg-gradient-to-r from-slate-900/80 via-blue-900/50 to-slate-900/80 backdrop-blur-md shadow-2xl shadow-cyan-500/10" style="flex-shrink:0">
+    <div class="max-w-7xl mx-auto px-4 md:px-6 py-6 flex items-center gap-4">
+        <div class="text-3xl animate-pulse-glow">💎</div>
+        <div>
+            <h1 class="text-2xl md:text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">Money Muling Detector</h1>
+            <p class="text-xs md:text-sm text-cyan-300/70 mt-1">Explainable AI • 10 Fraud Patterns • Risk Analysis</p>
+        </div>
+        <div class="ml-auto">
+            <a href="/admin" class="bg-gradient-to-r from-yellow-500 to-amber-500 text-slate-900 px-4 py-2 rounded-lg text-sm font-bold no-underline hover:shadow-lg hover:shadow-yellow-500/40 transition-all">🛡️ Admin</a>
+        </div>
+    </div>
+</header>
+
+<div style="flex:1;overflow-y:auto">
+<div class="max-w-7xl mx-auto px-4 md:px-6 py-8">
+
+<!-- UPLOAD -->
+<div id="uploadSection" class="animate-fadeInUp glass rounded-2xl p-8 md:p-12 text-center mb-8 border-2 border-dashed border-cyan-400/40">
+    <div class="text-6xl mb-4">📊</div>
+    <h2 class="text-2xl font-bold text-cyan-300 mb-2">Analyze Transaction Data</h2>
+    <p class="text-gray-300 mb-6">Upload CSV or demo data to detect 10 fraud patterns with AI explanations</p>
+    <div class="flex gap-3 justify-center flex-wrap">
+        <label class="bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-900 px-6 py-3 rounded-lg font-bold cursor-pointer hover:shadow-lg hover:shadow-cyan-500/50 hover:-translate-y-1 transition-all">
+            📁 Upload CSV
+            <input type="file" id="fileInput" accept=".csv" class="hidden">
+        </label>
+        <button onclick="useSampleData()" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:shadow-lg hover:shadow-purple-500/50 hover:-translate-y-1 transition-all">⚡ Demo</button>
+    </div>
+    <div id="fileName" class="text-cyan-300 text-sm mt-4"></div>
+</div>
+
+<!-- ERROR -->
+<div id="errorBox" class="hidden glass border-2 border-red-500/50 rounded-xl p-6 bg-red-500/5 mb-6">
+    <h3 class="text-red-400 font-bold mb-3">⚠️ Error</h3>
+    <ul id="errorList" class="text-red-300 text-sm space-y-1"></ul>
+</div>
+
+<!-- LOADING -->
+<div id="loading" class="hidden text-center py-20">
+    <div class="w-16 h-16 border-4 border-slate-600 border-t-cyan-400 rounded-full animate-spin mx-auto mb-6"></div>
+    <p class="text-lg text-gray-300">Analyzing transactions...</p>
+</div>
+
+<!-- RESULTS -->
+<div id="results" class="hidden space-y-8">
+    
+    <!-- SUMMARY -->
+    <div id="summaryGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 md:gap-4"></div>
+    
+    <!-- HIGH RISK CARDS -->
+    <div class="animate-fadeInUp">
+        <h2 class="text-2xl font-bold text-cyan-300 mb-4">⚠️ Flagged Accounts</h2>
+        <div id="riskyAccountsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </div>
+    
+    <!-- TABS -->
+    <div class="animate-fadeInUp mt-12">
+        <h2 class="text-2xl font-bold text-cyan-300 mb-4">📊 Detailed Analysis</h2>
+        <div class="flex gap-2 border-b border-cyan-500/20 pb-2 mb-6 overflow-x-auto">
+            <button onclick="switchTab('all')" class="tab px-4 py-2 whitespace-nowrap font-semibold text-cyan-300 border-b-2 border-cyan-400">👥 All</button>
+            <button onclick="switchTab('patterns')" class="tab px-4 py-2 whitespace-nowrap font-semibold text-gray-400 hover:text-cyan-300 border-b-2 border-transparent">🔍 Patterns</button>
+            <button onclick="switchTab('graph')" class="tab px-4 py-2 whitespace-nowrap font-semibold text-gray-400 hover:text-cyan-300 border-b-2 border-transparent">📈 Graph</button>
+        </div>
+        
+        <!-- TAB: All Accounts -->
+        <div id="tab-all" class="tab-content glass rounded-xl p-6">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr style="background:rgba(79,195,247,0.05);border-bottom:1px solid rgba(79,195,247,0.2)">
+                            <th class="px-4 py-3 text-left text-cyan-300 font-semibold">Account</th>
+                            <th class="px-4 py-3 text-left text-cyan-300 font-semibold">Score</th>
+                            <th class="px-4 py-3 text-left text-cyan-300 font-semibold">Risk</th>
+                            <th class="px-4 py-3 text-left text-cyan-300 font-semibold">Patterns Detected</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accountsTable"></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- TAB: Patterns -->
+        <div id="tab-patterns" class="tab-content hidden space-y-4 glass rounded-xl p-6"></div>
+        
+        <!-- TAB: Graph -->
+        <div id="tab-graph" class="tab-content hidden">
+            <div class="glass rounded-xl p-6" style="position:relative">
+                <div id="graphContainer" style="width:100%;height:500px;background:#0a1520;border-radius:8px;border:1px solid #1e3a5f;margin-bottom:12px;position:relative">
+                    <div id="graphTooltip" class="graph-tooltip"></div>
+                </div>
+                <p style="font-size:11px;color:#5a6a7e;text-align:center">Hover over nodes or edges to see transaction details • Click a node to view full account analysis</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</div>
+
+<!-- FOOTER -->
+<footer class="border-t border-cyan-500/20 bg-gradient-to-t from-slate-950 mt-16 py-8 text-center text-gray-500 text-sm">
+    <p>💎 Money Muling Detection Engine v2 — Explainable AI Fraud Detection</p>
+</footer>
+</div>
+
+<script>
+let currentData = null;
+let visNetwork = null;
+
+// ━━━━━━━━━━━━━ FILE UPLOAD ━━━━━━━━━━━━━
+const fileInput = document.getElementById('fileInput');
+fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (file) {
+        document.getElementById('fileName').textContent = '📄 ' + file.name;
+        analyzeFile(file);
+    }
+});
+
+function useSampleData() {
+    showLoading();
+    const formData = new FormData();
+    formData.append('use_sample', 'true');
+    fetch('/analyze', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(handleResponse)
+        .catch(err => showError([err.message]));
+}
+
+function analyzeFile(file) {
+    showLoading();
+    const formData = new FormData();
+    formData.append('file', file);
+    fetch('/analyze', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(handleResponse)
+        .catch(err => showError([err.message]));
+}
+
+function showLoading() {
+    document.getElementById('uploadSection').style.display = 'none';
+    document.getElementById('errorBox').classList.add('hidden');
+    document.getElementById('results').classList.add('hidden');
+    document.getElementById('loading').classList.remove('hidden');
+}
+
+function showError(errors) {
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('uploadSection').style.display = 'block';
+    const list = document.getElementById('errorList');
+    list.innerHTML = errors.map(e => `<li>• ${e}</li>`).join('');
+    document.getElementById('errorBox').classList.remove('hidden');
+}
+
+function handleResponse(data) {
+    document.getElementById('loading').classList.add('hidden');
+    if (data.error) {
+        showError(data.errors || ['Unknown error']);
+        return;
+    }
+    currentData = data;
+    renderAll(data);
+    document.getElementById('results').classList.remove('hidden');
+}
+
+// ━━━━━━━━━━━━━ RENDERING ━━━━━━━━━━━━━
+function renderAll(data) {
+    renderSummary(data.summary);
+    renderRiskyAccounts(data.scores);
+    renderAllAccounts(data.scores);
+    renderPatternBreakdown(data.scores);
+    if (data.graph) renderGraph(data.graph);
+}
+
+function renderSummary(s) {
+    const items = [
+        [s.total_accounts, 'Total\nAccounts'],
+        [s.high_risk, 'HIGH RISK', 'red'],
+        [s.medium_risk, 'MEDIUM', 'orange'],
+        [s.low_risk, 'LOW RISK', 'green'],
+        [s.total_cycles, 'Cycles'],
+        [s.fan_in_hubs + s.fan_out_hubs, 'Smurfing'],
+        [s.shell_accounts, 'Shell']
+    ];
+    
+    const grid = document.getElementById('summaryGrid');
+    grid.innerHTML = items.map((item, i) => {
+        const color = item[2] === 'red' ? 'text-red-400' : item[2] === 'orange' ? 'text-orange-400' : item[2] === 'green' ? 'text-green-400' : 'text-cyan-300';
+        return `
+            <div class="glass rounded-lg p-4 text-center animate-bounce-in" style="animation-delay:${i*0.08}s">
+                <div class="text-2xl md:text-3xl font-bold ${color}">${item[0]}</div>
+                <div class="text-xs text-gray-400 mt-2 uppercase">${item[1]}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderRiskyAccounts(scores) {
+    const risky = scores.filter(s => s.score >= 50).slice(0, 6);
+    const grid = document.getElementById('riskyAccountsGrid');
+    
+    grid.innerHTML = risky.map((s, i) => `
+        <div class="glass rounded-xl p-6 border-l-4 animate-bounce-in cursor-pointer hover:shadow-2xl transition-all" style="animation-delay:${i*0.1}s;border-left-color:${s.score >= 50 ? '#ef5350' : s.score >= 25 ? '#ffa726' : '#66bb6a'}" onclick="showAccountDetails('${s.account_id}')">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-100">${s.account_id}</h3>
+                    <span class="risk-badge ${s.score >= 50 ? 'risk-high' : s.score >= 25 ? 'risk-medium' : 'risk-low'}">${s.score >= 50 ? 'HIGH' : s.score >= 25 ? 'MEDIUM' : 'LOW'}</span>
+                </div>
+                <div class="score-circle ${s.score >= 50 ? 'high' : s.score >= 25 ? 'medium' : 'low'}">${s.score.toFixed(0)}</div>
+            </div>
+            <p class="text-sm text-gray-300 mb-3">${(s.patterns || []).length} pattern(s): ${(s.patterns || []).slice(0, 2).join(', ')}${(s.patterns || []).length > 2 ? '...' : ''}</p>
+            <p class="text-xs text-cyan-300 font-semibold cursor-pointer hover:text-cyan-200">Learn Why →</p>
+        </div>
+    `).join('');
+}
+
+function renderAllAccounts(scores) {
+    const tbody = document.getElementById('accountsTable');
+    tbody.innerHTML = scores.slice(0, 25).map(s => {
+        const tags = (s.patterns || []).map(p => `<span style="display:inline-block;padding:2px 6px;background:rgba(79,195,247,0.15);color:#81d4fa;border-radius:3px;font-size:10px;margin-right:3px">${p}</span>`).join('');
+        return `
+            <tr style="border-bottom:1px solid rgba(79,195,247,0.1);cursor:pointer;hover:background:rgba(79,195,247,0.05)" onclick="showAccountDetails('${s.account_id}')">
+                <td class="px-4 py-3 text-cyan-300 font-semibold">${s.account_id}</td>
+                <td class="px-4 py-3 text-gray-300">${s.score.toFixed(1)}</td>
+                <td class="px-4 py-3"><span class="risk-badge ${s.score >= 50 ? 'risk-high' : s.score >= 25 ? 'risk-medium' : 'risk-low'}">${s.score >= 50 ? 'HIGH' : s.score >= 25 ? 'MEDIUM' : 'LOW'}</span></td>
+                <td class="px-4 py-3">${tags}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function renderPatternBreakdown(scores) {
+    const patterns = {};
+    scores.forEach(s => {
+        (s.patterns || []).forEach(p => {
+            patterns[p] = (patterns[p] || 0) + 1;
+        });
+    });
+    
+    const div = document.getElementById('tab-patterns');
+    div.innerHTML = Object.entries(patterns).sort((a,b) => b[1] - a[1]).map(([p, count]) => `
+        <div class="pattern-card glass rounded-lg p-4 border-l-4 border-l-cyan-500">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 class="text-lg font-bold text-cyan-300">${p}</h3>
+                    <p class="text-sm text-gray-400 mt-1">${count} account(s) flagged</p>
+                </div>
+                <button onclick="showPatternDetails('${p}')" class="bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1 rounded-lg text-sm font-bold transition">Learn</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// ━━━━━━━━━━━━━ MODALS ━━━━━━━━━━━━━
+function showAccountDetails(accountId) {
+    const acc = currentData.scores.find(s => s.account_id === accountId);
+    if (!acc) return;
+    
+    let html = `
+        <div style="width:100%;word-wrap:break-word;overflow-wrap:break-word">
+            <h2 style="font-size:24px;font-weight:700;color:#4fc3f7;margin-bottom:12px;word-break:break-all">${accountId}</h2>
+            <div style="display:flex;gap:16px;margin-bottom:20px">
+                <div>
+                    <p style="font-size:11px;color:#7a8a9e;text-transform:uppercase;margin-bottom:8px">Risk Level</p>
+                    <span class="risk-badge ${acc.score >= 50 ? 'risk-high' : acc.score >= 25 ? 'risk-medium' : 'risk-low'}">${acc.score >= 50 ? 'HIGH' : acc.score >= 25 ? 'MEDIUM' : 'LOW'}</span>
+                </div>
+                <div>
+                    <p style="font-size:11px;color:#7a8a9e;text-transform:uppercase;margin-bottom:4px">Score</p>
+                    <div class="score-circle ${acc.score >= 50 ? 'high' : acc.score >= 25 ? 'medium' : 'low'}" style="width:60px;height:60px;font-size:24px">${acc.score.toFixed(0)}</div>
+                </div>
+            </div>
+            <p style="font-size:13px;color:#e0e6ed;margin-bottom:20px;line-height:1.6">${acc.why_suspicious}</p>
+            <h3 style="font-size:12px;font-weight:700;color:#4fc3f7;text-transform:uppercase;margin-bottom:12px;letter-spacing:0.5px">Detected Patterns (${(acc.pattern_details || []).length})</h3>
+            <div style="display:flex;flex-direction:column;gap:10px">
+                ${(acc.pattern_details || []).map(p => `
+                    <div onclick="showPatternDetails('${p.name}')" style="background:rgba(79,195,247,0.08);border:1px solid rgba(79,195,247,0.2);border-radius:8px;padding:12px;cursor:pointer;transition:background 0.2s;word-wrap:break-word">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;gap:8px">
+                            <h4 style="color:#81d4fa;font-weight:600;font-size:13px;flex:1;word-break:break-word">${p.title}</h4>
+                            <span style="background:rgba(239,83,80,0.2);color:#ef5350;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase;flex-shrink:0">${p.risk}</span>
+                        </div>
+                        <p style="font-size:12px;color:#a0a8b8;margin-bottom:6px">${p.description}</p>
+                        <p style="font-size:12px;color:#888996;font-style:italic">→ ${p.meaning.substring(0,100)}...</p>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('modalBody').innerHTML = html;
+    document.getElementById('detailModal').classList.add('active');
+    document.body.classList.add('modal-open');
+}
+
+function showPatternDetails(patternName) {
+    // ── Detailed explanations keyed by actual pattern names from the engine ──
+    const explanations = {
+        "cycle_participant": {
+            title: "🔄 Circular Money Flow",
+            fraudType: "Money Laundering — Cycle Layering",
+            description: "This account participates in circular transaction loops where money flows back to its origin",
+            reasons: [
+                "No legitimate commercial reason for A→B→C→A cycles",
+                "Circular routing hides the original source and beneficial owner of funds",
+                "Creates a false transaction history that confuses investigators",
+                "Deliberately obscures fund traceability across multiple hops"
+            ],
+            meaning: "Money flows in circles (A sends to B, B to C, C back to A). Criminals use this to make it impossible to trace where the money came from and who benefits. Each transfer adds 'distance' from the original criminal source. Circular routing is extremely rare in legitimate banking.",
+            riskType: "Layering — Step 2 of Money Laundering",
+            risk: "HIGH"
+        },
+        "fan_in_hub": {
+            title: "🐟 Fan-In Smurfing Hub (Collection Point)",
+            fraudType: "Money Laundering — Smurfing / Collection",
+            description: "This account receives transactions from many different senders — a classic collection-point pattern",
+            reasons: [
+                "Multiple accounts funneling money into a single hub to stay below reporting thresholds",
+                "Creates an illusion of legitimate small deposits through volume",
+                "Recruited 'smurfs' (mules) each deposit small amounts",
+                "Hub consolidates pooled funds for further movement"
+            ],
+            meaning: "Multiple accounts are sending small amounts to this one account — a textbook collection hub. Criminals recruit people ('smurfs') who each deposit amounts below the $10,000 reporting threshold. The hub then consolidates and forwards the pooled funds. This is highly illegal structuring.",
+            riskType: "Smurfing — Collection Hub / Threshold Evasion",
+            risk: "HIGH"
+        },
+        "fan_out_hub": {
+            title: "🐟 Fan-Out Smurfing Hub (Distribution Point)",
+            fraudType: "Money Laundering — Smurfing / Distribution",
+            description: "This account sends transactions to many different receivers — a classic distribution pattern",
+            reasons: [
+                "Single account distributing funds across numerous recipients",
+                "Spreads money to make tracing extremely difficult",
+                "Each recipient receives below-threshold amounts",
+                "Suggests controller distributing criminal proceeds"
+            ],
+            meaning: "This account is the distribution hub — after consolidating illicit funds, it fans them out to many separate accounts. Each recipient gets a small enough amount to avoid triggers. This makes it nearly impossible for investigators to follow the full money trail.",
+            riskType: "Smurfing — Distribution Hub / Threshold Evasion",
+            risk: "HIGH"
+        },
+        "smurfing_peripheral": {
+            title: "🐟 Smurfing Network Participant",
+            fraudType: "Money Laundering — Peripheral Mule",
+            description: "This account is part of a smurfing network but is not the central hub",
+            reasons: [
+                "Participates in structured fan-in or fan-out transfers",
+                "May be a recruited individual moving money on behalf of an organizer",
+                "Sometimes unknowing participants used as 'money mules'",
+                "Pattern connects to a known smurfing hub"
+            ],
+            meaning: "While not the main hub, this account is a spoke in a smurfing wheel — it either feeds money into a collection hub or receives distributions from one. Peripheral mules are often recruited individuals who may not realize they're part of a money laundering operation.",
+            riskType: "Smurfing — Peripheral Mule Account",
+            risk: "MEDIUM"
+        },
+        "shell_passthrough": {
+            title: "🔗 Shell Pass-Through Account",
+            fraudType: "Money Laundering — Relay / Pass-Through Layering",
+            description: "Account acts as a pure relay — money enters and exits quickly with near-zero retention",
+            reasons: [
+                "Near-zero time lag between receiving and forwarding funds",
+                "Retains almost nothing — acts purely as a conduit",
+                "No legitimate business processing or value added",
+                "Each additional hop makes tracing the money harder"
+            ],
+            meaning: "Money comes in and immediately goes back out — this account keeps virtually nothing. Like a mailbox that just forwards everything. A real business would hold inventory, pay staff, and show economic activity. This account exists solely to add another hop in the money trail, making it harder for investigators to trace the true source and destination.",
+            riskType: "Shell / Pass-Through Layering",
+            risk: "HIGH"
+        },
+        "shell_network_member": {
+            title: "🔗 Shell Network Member",
+            fraudType: "Money Laundering — Shell Network",
+            description: "Account belongs to a cluster behaving like shell entities",
+            reasons: [
+                "Part of an interconnected group with high throughput and low retention",
+                "Collectively creates a complex web of transactions",
+                "Designed to frustrate investigators tracing fund flows",
+                "Obscures the beneficial owner of the funds"
+            ],
+            meaning: "This account is part of a group that collectively looks like a network of shell companies — high money throughput, minimal retention, and heavy internal transfers. These networks create such complex webs of transactions that it becomes extremely difficult to identify who actually controls and benefits from the funds.",
+            riskType: "Shell Network — Coordinated Layering",
+            risk: "MEDIUM-HIGH"
+        },
+        "high_velocity": {
+            title: "⚡ High Transaction Velocity",
+            fraudType: "Money Laundering — High-Speed Transfers",
+            description: "Unusually high number of transactions per hour",
+            reasons: [
+                "Transaction rate far exceeds normal account behavior",
+                "Suggests automated or scripted money movement",
+                "Funds pushed through as fast as possible before detection",
+                "Timing pattern is unnatural for legitimate business"
+            ],
+            meaning: "This account processes transactions at an abnormally high rate — far more per hour than typical. Such rapid activity usually indicates automated or scripted money movement, where funds are pushed through as quickly as possible before detection systems or account freezes can intervene.",
+            riskType: "Velocity Anomaly — Automated Movement",
+            risk: "MEDIUM-HIGH"
+        },
+        "rapid_passthrough": {
+            title: "⚡ Rapid Pass-Through",
+            fraudType: "Money Laundering — Velocity Layering",
+            description: "Similar amounts received and sent within a very short time window",
+            reasons: [
+                "Money arrives and a similar amount leaves within minutes",
+                "Amount matching indicates automated relay behavior",
+                "Timing is too tight for legitimate commercial processing",
+                "Pattern strongly suggests pre-planned money movement"
+            ],
+            meaning: "Money arrives at this account and a similar (or identical) amount leaves within minutes — the hallmark of a transit relay. When both timing and amounts closely match, it strongly indicates automated layering rather than any legitimate commercial activity. Each rapid hop adds another layer of obfuscation.",
+            riskType: "Rapid Pass-Through — Timed Relay Layering",
+            risk: "HIGH"
+        },
+        "layering_chain": {
+            title: "📚 Transaction Layering Chain",
+            fraudType: "Money Laundering — Layering (Step 2)",
+            description: "Part of a chain where amounts decrease at each step (commission deduction)",
+            reasons: [
+                "Decreasing amounts ($10k→$9.5k→$9k) show commission deductions",
+                "Each intermediary extracts a fee before forwarding the rest",
+                "Creates a long chain that distances money from its criminal source",
+                "This commission-based model is a hallmark of professional laundering"
+            ],
+            meaning: "A → B ($10,000), B → C ($9,500), C → D ($9,000). Each person in the chain keeps a small 'commission' and forwards the rest. This decreasing-amount pattern is a textbook layering technique — it rewards each mule while making it progressively harder to trace the original criminal proceeds.",
+            riskType: "Layering — Commission-Based Relay Chain",
+            risk: "MEDIUM-HIGH"
+        },
+        "structuring": {
+            title: "💰 Structuring / Threshold Avoidance",
+            fraudType: "Money Laundering — Structuring (FEDERAL CRIME)",
+            description: "Multiple transactions deliberately placed just below a reporting threshold",
+            reasons: [
+                "Deliberately avoiding Currency Transaction Reports (CTR)",
+                "Large sums split into many just-under-threshold transfers",
+                "Illegal under Bank Secrecy Act (31 USC §5324)",
+                "Structuring is itself a federal crime even if underlying funds are clean"
+            ],
+            meaning: "This account repeatedly transacts amounts just under a regulatory reporting limit (e.g., many $9,800–$9,999 transactions when the $10,000 threshold triggers mandatory reporting). Banks must file CTRs for transactions ≥$10,000. Deliberately splitting to avoid this is ILLEGAL by itself — even if the underlying money was legitimate.",
+            riskType: "Structuring — Deliberate Regulatory Evasion",
+            risk: "HIGH"
+        },
+        "amount_repetition": {
+            title: "💰 Repeated Identical Amounts",
+            fraudType: "Money Laundering — Automated Structuring",
+            description: "Same exact dollar amount appears in many transactions",
+            reasons: [
+                "Identical amounts repeated many times is unnatural",
+                "Suggests automated or scripted transfer operations",
+                "Legitimate transactions show natural amount variation",
+                "Pre-set rules rather than organic economic activity"
+            ],
+            meaning: "This account sends or receives the exact same amount over and over. Natural economic activity produces varied amounts — $5,233 one day, $4,876 the next. This rigid repetition suggests automated or scripted transfers, often part of a structured money-moving operation.",
+            riskType: "Amount Repetition — Automation Indicator",
+            risk: "MEDIUM"
+        },
+        "amount_consistency": {
+            title: "💵 Unusual Amount Consistency",
+            fraudType: "Money Laundering — Pass-Through Indicator",
+            description: "Total money in ≈ total money out (less than 5% retained)",
+            reasons: [
+                "Near-perfect balance of inflows and outflows is extremely rare in legitimate accounts",
+                "Indicates the account is simply relaying funds, not using them",
+                "No economic consumption — just a transit point",
+                "Hallmark behavior of a money mule account"
+            ],
+            meaning: "The total amount this account received closely matches what it sent out, retaining less than 5%. Legitimate accounts spend, save, or invest — they don't balance in and out this precisely. This 'pass-through' balance is a strong indicator of a mule account that exists solely to relay funds.",
+            riskType: "Amount Consistency — Mule Account Indicator",
+            risk: "MEDIUM"
+        },
+        "low_entropy": {
+            title: "📊 Low Transaction Entropy",
+            fraudType: "Money Laundering — Controlled Pattern",
+            description: "Transaction counterparty pattern is highly predictable / concentrated",
+            reasons: [
+                "Very few unique counterparties in a repetitive pattern",
+                "Legitimate accounts interact with a variety of parties",
+                "Concentrated pattern suggests an artificial relationship",
+                "Indicates a dedicated mule funneling to/from a single controller"
+            ],
+            meaning: "This account transacts with very few unique counterparties in a highly repetitive way (low Shannon entropy). Normal accounts interact with dozens of different parties. A concentrated, predictable pattern suggests an artificial relationship — such as a dedicated mule account funneling money to or from a single controller.",
+            riskType: "Low Entropy — Concentrated / Controlled Pattern",
+            risk: "MEDIUM"
+        },
+        "new_account_burst": {
+            title: "✨ New Account Burst",
+            fraudType: "Money Laundering — Fresh Account Exploitation",
+            description: "Recently created account with sudden high transaction volume",
+            reasons: [
+                "Fresh accounts bypass historical behavior checks",
+                "No transaction history exists to flag pattern anomalies",
+                "Often created for one-time operations then abandoned",
+                "Suggests planned, temporary use for money movement"
+            ],
+            meaning: "This account was created very recently but immediately began processing a large number of transactions or high volume of funds. Legitimate new accounts ramp up gradually. A sudden burst suggests the account was opened specifically for a money-laundering operation and will likely be abandoned once the funds are moved.",
+            riskType: "New Account — Burst Activity / Disposable Mule",
+            risk: "MEDIUM-HIGH"
+        },
+        "tight_community": {
+            title: "🌐 Tight Community Cluster",
+            fraudType: "Money Laundering — Coordinated Ring",
+            description: "Member of a tightly interconnected group with heavy internal transfers",
+            reasons: [
+                "Heavy internal transfers suggest a coordinated operation",
+                "All accounts appear to work together, not independently",
+                "Typical structure of organized money laundering rings",
+                "Isolated from the legitimate financial ecosystem"
+            ],
+            meaning: "This account belongs to a small, densely connected group where most transactions stay within the cluster. Such tight communities are uncommon in normal banking — most people transact with a wide variety of parties. This pattern suggests a coordinated ring: accounts controlled by the same entity or criminal group, moving money among themselves to layer and obscure its origin.",
+            riskType: "Community Cluster — Organized Ring Structure",
+            risk: "MEDIUM"
+        },
+        "trust_adjusted": {
+            title: "✅ Trust Multiplier Applied",
+            fraudType: "False-Positive Control",
+            description: "Score reduced — high-degree node with stable timing and no cycle involvement",
+            reasons: [
+                "Very high number of counterparties (merchant-like behavior)",
+                "Regular, predictable transaction timing",
+                "Not involved in any circular routing (cycles)",
+                "Characteristics consistent with legitimate large-volume entity"
+            ],
+            meaning: "This account has characteristics of a legitimate merchant or payroll processor — it transacts with many parties at regular intervals and isn't involved in any cycles. A trust discount was applied to reduce the false-positive risk. This is an informational flag, not a fraud indicator.",
+            riskType: "Trusted Entity — False-Positive Discount",
+            risk: "LOW"
+        }
+    };
+
+    // Resolve pattern name: try exact match, then prefix match
+    function findExplanation(name) {
+        if (explanations[name]) return explanations[name];
+        // Prefix match for dynamic names like cycle_participant_x8, rapid_passthrough_x3, structuring_below_3000, amount_repeat_x5
+        const prefixes = ["cycle_participant", "rapid_passthrough", "structuring_below", "amount_repeat"];
+        for (const prefix of prefixes) {
+            if (name.startsWith(prefix)) {
+                const base = prefix === "amount_repeat" ? "amount_repetition" : prefix === "structuring_below" ? "structuring" : prefix;
+                if (explanations[base]) {
+                    const info = Object.assign({}, explanations[base]);
+                    const suffix = name.substring(prefix.length);
+                    if (suffix.startsWith("_x")) info.title = info.title + " (×" + suffix.substring(2) + ")";
+                    else if (suffix.startsWith("_below_")) info.title = info.title + " (below $" + suffix.substring(7) + ")";
+                    return info;
+                }
+            }
+        }
+        // Also try backend pattern_details from current data
+        if (currentData && currentData.scores) {
+            for (const acc of currentData.scores) {
+                const pd = (acc.pattern_details || []).find(p => p.name === name);
+                if (pd) {
+                    return {
+                        title: pd.title || name,
+                        fraudType: pd.ml_classification || "Suspicious Pattern",
+                        description: pd.description || "Pattern detected by AI engine",
+                        reasons: ["Pattern flagged as suspicious by the detection engine"],
+                        meaning: pd.meaning || "This pattern was flagged as suspicious.",
+                        riskType: pd.ml_classification || "General Fraud",
+                        risk: pd.risk || "MEDIUM"
+                    };
+                }
+            }
+        }
+        return null;
+    }
+
+    const info = findExplanation(patternName) || {
+        title: patternName,
+        fraudType: "Suspicious Pattern",
+        description: "Pattern detected by the AI detection engine",
+        reasons: ["Pattern flagged as suspicious by the detection engine"],
+        meaning: "This pattern was flagged as suspicious and warrants further investigation.",
+        riskType: "General Fraud",
+        risk: "MEDIUM"
+    };
+    
+    const html = `
+        <div style="width:100%;word-wrap:break-word;overflow-wrap:break-word">
+            <h2 style="font-size:22px;font-weight:700;color:#4fc3f7;margin-bottom:6px;word-break:break-word">${info.title}</h2>
+            <p style="font-size:11px;color:#888;margin-bottom:20px;font-style:italic">Pattern ID: ${patternName}</p>
+            
+            <h3 style="font-size:10px;font-weight:700;color:#81d4fa;text-transform:uppercase;margin-bottom:6px;letter-spacing:0.5px">Fraud Type</h3>
+            <p style="font-size:12px;color:#e0e6ed;margin-bottom:20px;font-weight:600;line-height:1.4">${info.fraudType}</p>
+            
+            <h3 style="font-size:10px;font-weight:700;color:#81d4fa;text-transform:uppercase;margin-bottom:6px;letter-spacing:0.5px">What It Means in Simple Words</h3>
+            <p style="font-size:12px;color:#d0d8e0;margin-bottom:20px;line-height:1.6;word-wrap:break-word">${info.meaning}</p>
+            
+            <h3 style="font-size:10px;font-weight:700;color:#81d4fa;text-transform:uppercase;margin-bottom:8px;letter-spacing:0.5px">Why This is Suspicious (${info.reasons.length} Reasons)</h3>
+            <div style="background:rgba(79,195,247,0.06);border-left:3px solid #4fc3f7;padding:12px;border-radius:6px;margin-bottom:20px;word-wrap:break-word">
+                ${info.reasons.map(r => `<p style="font-size:11px;color:#c0cede;margin-bottom:6px;line-height:1.5;word-wrap:break-word">• ${r}</p>`).join('')}
+            </div>
+            
+            <h3 style="font-size:10px;font-weight:700;color:#81d4fa;text-transform:uppercase;margin-bottom:6px;letter-spacing:0.5px">Money Laundering Classification</h3>
+            <p style="font-size:11px;color:#a0a8b8;margin-bottom:16px;line-height:1.4;word-wrap:break-word">${info.riskType}</p>
+            
+            <h3 style="font-size:10px;font-weight:700;color:#81d4fa;text-transform:uppercase;margin-bottom:8px;letter-spacing:0.5px">Risk Level</h3>
+            <span class="risk-badge ${info.risk.includes('HIGH') ? 'risk-high' : info.risk.includes('LOW') ? 'risk-low' : 'risk-medium'}">${info.risk}</span>
+        </div>
+    `;
+    
+    document.getElementById('modalBody').innerHTML = html;
+    document.getElementById('detailModal').classList.add('active');
+    document.body.classList.add('modal-open');
+}
+
+function closeModal() {
+    document.getElementById('detailModal').classList.remove('active');
+    document.body.classList.remove('modal-open');
+}
+
+// ━━━━━━━━━━━━━ TABS ━━━━━━━━━━━━━
+function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => {
+        t.classList.remove('border-b-cyan-400');
+        t.classList.add('border-b-transparent');
+        t.classList.remove('text-cyan-300');
+        t.classList.add('text-gray-400');
+    });
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+    
+    event.target.classList.add('border-b-cyan-400', 'text-cyan-300');
+    event.target.classList.remove('border-b-transparent', 'text-gray-400');
+    document.getElementById('tab-' + name).classList.remove('hidden');
+}
+
+// ━━━━━━━━━━━━━ GRAPH ━━━━━━━━━━━━━
+let graphNodeMap = {};
+let graphEdgeMap = {};
+
+function renderGraph(graphData) {
+    if (!graphData) return;
+    const container = document.getElementById('graphContainer');
+    const tooltip = document.getElementById('graphTooltip');
+
+    // Build lookup maps from the raw graph data
+    graphNodeMap = {};
+    graphData.nodes.forEach(n => { graphNodeMap[n.id] = n; });
+    graphEdgeMap = {};
+    graphData.edges.forEach((e, i) => { graphEdgeMap['e' + i] = e; });
+    
+    const nodes = graphData.nodes.map(n => ({
+        id: n.id,
+        label: n.id,
+        size: Math.max(12, Math.min(30, n.score / 2 + 15)),
+        color: {
+            background: n.score >= 50 ? '#ef5350' : n.score >= 25 ? '#ffa726' : '#66bb6a',
+            border: n.score >= 50 ? '#c62828' : n.score >= 25 ? '#e65100' : '#2e7d32',
+            highlight: { background: n.score >= 50 ? '#ff8a80' : n.score >= 25 ? '#ffcc80' : '#a5d6a7', border: '#4fc3f7' },
+            hover: { background: n.score >= 50 ? '#ff8a80' : n.score >= 25 ? '#ffcc80' : '#a5d6a7', border: '#4fc3f7' }
+        },
+        borderWidth: 2,
+        font: { color: '#c0cede', size: 10, strokeWidth: 2, strokeColor: '#0a1520' }
+    }));
+    
+    const edges = graphData.edges.map((e, i) => ({
+        id: 'e' + i,
+        from: e.from,
+        to: e.to,
+        arrows: 'to',
+        color: { color: '#1e3a5f', hover: '#4fc3f7', highlight: '#4fc3f7' },
+        width: Math.min(1 + e.count * 0.3, 4),
+        hoverWidth: 0.5
+    }));
+    
+    if (visNetwork) visNetwork.destroy();
+    visNetwork = new vis.Network(container, 
+        { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) },
+        {
+            physics: { enabled: true, barnesHut: { gravitationalConstant: -3000, centralGravity: 0.3, springLength: 150 }, stabilization: { iterations: 200 } },
+            interaction: { hover: true, zoomView: true, dragView: true, tooltipDelay: 0 }
+        }
+    );
+
+    // ── Hover: show tooltip for nodes ──
+    visNetwork.on('hoverNode', function(params) {
+        const nodeId = params.node;
+        const n = graphNodeMap[nodeId];
+        if (!n) return;
+
+        const riskColor = n.score >= 50 ? '#ef5350' : n.score >= 25 ? '#ffa726' : '#66bb6a';
+        const riskLabel = n.score >= 50 ? 'HIGH' : n.score >= 25 ? 'MEDIUM' : 'LOW';
+        const riskBg = n.score >= 50 ? 'rgba(239,83,80,0.2)' : n.score >= 25 ? 'rgba(255,167,38,0.2)' : 'rgba(102,187,106,0.2)';
+
+        const patternsHtml = (n.patterns || []).length > 0
+            ? `<div class="tt-patterns">${n.patterns.map(p => `<span>${p}</span>`).join('')}</div>`
+            : '<div style="color:#5a6a7e;font-size:10px;margin-top:4px">No patterns detected</div>';
+
+        tooltip.innerHTML = `
+            <div class="tt-title">${n.id}</div>
+            <div class="tt-row"><span class="tt-label">Suspicion Score</span><span class="tt-value" style="color:${riskColor}">${n.score.toFixed(1)} / 100</span></div>
+            <div class="tt-row"><span class="tt-label">Total Sent</span><span class="tt-value">$${n.total_sent.toLocaleString()}</span></div>
+            <div class="tt-row"><span class="tt-label">Total Received</span><span class="tt-value">$${n.total_received.toLocaleString()}</span></div>
+            <div class="tt-row"><span class="tt-label">Net Flow</span><span class="tt-value" style="color:${n.net_flow >= 0 ? '#66bb6a' : '#ef5350'}">$${n.net_flow.toLocaleString()}</span></div>
+            <div class="tt-row"><span class="tt-label">Transactions</span><span class="tt-value">${n.tx_count}</span></div>
+            <div class="tt-row"><span class="tt-label">Risk Level</span><span class="tt-badge" style="background:${riskBg};color:${riskColor}">${riskLabel}</span></div>
+            ${n.ring_id ? `<div class="tt-row"><span class="tt-label">Ring ID</span><span class="tt-value" style="color:#4fc3f7">${n.ring_id}</span></div>` : ''}
+            ${patternsHtml}
+        `;
+        positionTooltip(params.event, container, tooltip);
+        tooltip.classList.add('visible');
+    });
+
+    visNetwork.on('blurNode', function() {
+        tooltip.classList.remove('visible');
+    });
+
+    // ── Hover: show tooltip for edges ──
+    visNetwork.on('hoverEdge', function(params) {
+        const edgeId = params.edge;
+        const e = graphEdgeMap[edgeId];
+        if (!e) return;
+
+        const fromNode = graphNodeMap[e.from] || {};
+        const toNode = graphNodeMap[e.to] || {};
+        const fromColor = (fromNode.score||0) >= 50 ? '#ef5350' : (fromNode.score||0) >= 25 ? '#ffa726' : '#66bb6a';
+        const toColor = (toNode.score||0) >= 50 ? '#ef5350' : (toNode.score||0) >= 25 ? '#ffa726' : '#66bb6a';
+
+        tooltip.innerHTML = `
+            <div class="tt-title">Transaction Path</div>
+            <div style="text-align:center;margin:6px 0">
+                <span style="color:${fromColor};font-weight:700">${e.from}</span>
+                <span style="color:#4fc3f7;margin:0 6px">→</span>
+                <span style="color:${toColor};font-weight:700">${e.to}</span>
+            </div>
+            <div class="tt-row"><span class="tt-label">Total Amount</span><span class="tt-value">$${e.amount.toLocaleString()}</span></div>
+            <div class="tt-row"><span class="tt-label">Transaction Count</span><span class="tt-value">${e.count}</span></div>
+            <div class="tt-row"><span class="tt-label">Avg per Transaction</span><span class="tt-value">$${(e.amount / Math.max(e.count, 1)).toLocaleString(undefined, {maximumFractionDigits: 2})}</span></div>
+            <div class="tt-row"><span class="tt-label">Sender Score</span><span class="tt-value" style="color:${fromColor}">${(fromNode.score||0).toFixed(1)}</span></div>
+            <div class="tt-row"><span class="tt-label">Receiver Score</span><span class="tt-value" style="color:${toColor}">${(toNode.score||0).toFixed(1)}</span></div>
+        `;
+        positionTooltip(params.event, container, tooltip);
+        tooltip.classList.add('visible');
+    });
+
+    visNetwork.on('blurEdge', function() {
+        tooltip.classList.remove('visible');
+    });
+
+    // ── Click node: open full account detail modal ──
+    visNetwork.on('click', function(params) {
+        tooltip.classList.remove('visible');
+        if (params.nodes && params.nodes.length > 0) {
+            showAccountDetails(params.nodes[0]);
+        }
+    });
+
+    // Hide tooltip on drag / zoom
+    visNetwork.on('dragStart', function() { tooltip.classList.remove('visible'); });
+    visNetwork.on('zoom', function() { tooltip.classList.remove('visible'); });
+}
+
+function positionTooltip(event, container, tooltip) {
+    const rect = container.getBoundingClientRect();
+    let x = (event.center ? event.center.x : event.clientX) - rect.left + 15;
+    let y = (event.center ? event.center.y : event.clientY) - rect.top + 15;
+    // Keep tooltip inside the container
+    const tw = tooltip.offsetWidth || 280;
+    const th = tooltip.offsetHeight || 180;
+    if (x + tw > rect.width - 10) x = x - tw - 30;
+    if (y + th > rect.height - 10) y = y - th - 30;
+    if (x < 5) x = 5;
+    if (y < 5) y = 5;
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+}
+
+window.addEventListener('load', () => {
+    // Close modal on background click
+    document.getElementById('detailModal').addEventListener('click', (e) => {
+        if (e.target.id === 'detailModal') closeModal();
+    });
+});
+</script>
+
+</body>
+</html>

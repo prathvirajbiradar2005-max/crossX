@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛡️ Admin Panel — Money Muling Detection</title>
+    <script src="https://unpkg.com/vis-network@9.1.6/standalone/umd/vis-network.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Poppins', sans-serif; }
+        body.modal-open { overflow: hidden; }
+
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse-glow { 0%, 100% { filter: drop-shadow(0 0 6px rgba(251,191,36,0.3)); } 50% { filter: drop-shadow(0 0 20px rgba(251,191,36,0.7)); } }
+        .animate-fadeInUp { animation: fadeInUp 0.5s ease-out; }
+        .animate-pulse-glow { animation: pulse-glow 2.5s ease-in-out infinite; }
+
+        .glass { background: rgba(15, 25, 35, 0.5); backdrop-filter: blur(12px); border: 1px solid rgba(251,191,36,0.12); transition: all 0.3s ease; }
+        .glass:hover { background: rgba(15, 25, 35, 0.65); border-color: rgba(251,191,36,0.3); }
+
+        .gradient-bg { background: linear-gradient(135deg, #0f172a 0%, #1a1a2e 30%, #16213e 60%, #0f172a 100%); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: linear-gradient(135deg, #0f172a, #1e3a5f); border-radius: 16px; max-width: 900px; width: 95%; max-height: 90vh; overflow-y: auto; border: 1px solid rgba(251,191,36,0.2); padding: 28px; scrollbar-width: thin; scrollbar-color: #fbbf24 #0a1520; }
+
+        table { border-collapse: collapse; width: 100%; }
+        th { position: sticky; top: 0; z-index: 10; }
+
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .status-flagged { background: rgba(239,83,80,0.2); color: #ef5350; }
+        .status-cleared { background: rgba(102,187,106,0.2); color: #66bb6a; }
+        .status-review { background: rgba(255,167,38,0.2); color: #ffa726; }
+
+        .btn { padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; }
+        .btn:hover { transform: translateY(-1px); }
+        .btn-flag { background: rgba(239,83,80,0.2); color: #ef5350; border: 1px solid rgba(239,83,80,0.3); }
+        .btn-flag:hover { background: rgba(239,83,80,0.35); }
+        .btn-clear { background: rgba(102,187,106,0.2); color: #66bb6a; border: 1px solid rgba(102,187,106,0.3); }
+        .btn-clear:hover { background: rgba(102,187,106,0.35); }
+        .btn-review { background: rgba(255,167,38,0.2); color: #ffa726; border: 1px solid rgba(255,167,38,0.3); }
+        .btn-review:hover { background: rgba(255,167,38,0.35); }
+        .btn-trace { background: rgba(79,195,247,0.2); color: #4fc3f7; border: 1px solid rgba(79,195,247,0.3); }
+        .btn-trace:hover { background: rgba(79,195,247,0.35); }
+        .btn-primary { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #0f172a; }
+        .btn-primary:hover { box-shadow: 0 4px 15px rgba(251,191,36,0.4); }
+
+        .search-input { background: rgba(15,25,35,0.8); border: 1px solid rgba(251,191,36,0.2); border-radius: 10px; padding: 10px 16px; color: #e0e6ed; font-size: 14px; outline: none; transition: border-color 0.2s; }
+        .search-input:focus { border-color: #fbbf24; }
+        .search-input::placeholder { color: #4a5568; }
+
+        .filter-btn { padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid rgba(251,191,36,0.15); background: transparent; color: #9ca3af; cursor: pointer; transition: all 0.2s; }
+        .filter-btn.active { background: rgba(251,191,36,0.15); color: #fbbf24; border-color: rgba(251,191,36,0.4); }
+        .filter-btn:hover { color: #fbbf24; border-color: rgba(251,191,36,0.3); }
+
+        .stat-card { text-align: center; padding: 16px; }
+        .stat-number { font-size: 28px; font-weight: 800; }
+        .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #9ca3af; margin-top: 4px; }
+    </style>
+</head>
+<body class="gradient-bg text-gray-100">
+
+<!-- TRANSACTION TRACE MODAL -->
+<div id="traceModal" class="modal">
+    <div class="modal-content">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+            <h2 id="traceTitle" style="font-size:20px;font-weight:700;color:#fbbf24">Transaction Trace</h2>
+            <button onclick="closeTraceModal()" style="background:none;border:none;font-size:24px;color:#666;cursor:pointer">✕</button>
+        </div>
+        <div id="traceBody" style="overflow-y:auto;flex:1"></div>
+    </div>
+</div>
+
+<!-- HEADER -->
+<header class="animate-fadeInUp border-b border-yellow-500/20 bg-gradient-to-r from-slate-900/90 via-yellow-900/30 to-slate-900/90 backdrop-blur-md shadow-2xl shadow-yellow-500/10" style="flex-shrink:0">
+    <div class="max-w-7xl mx-auto px-4 md:px-6 py-5 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+            <div class="text-3xl animate-pulse-glow">🛡️</div>
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold bg-gradient-to-r from-yellow-400 via-amber-400 to-orange-400 bg-clip-text text-transparent">Admin Panel</h1>
+                <p class="text-xs text-yellow-300/60 mt-1">Account Management • Flag/Unflag • Transaction Tracing</p>
+            </div>
+        </div>
+        <a href="/" class="btn btn-primary px-5 py-2 rounded-lg text-sm font-bold no-underline">← Back to Dashboard</a>
+    </div>
+</header>
+
+<div style="flex:1;overflow-y:auto">
+<div class="max-w-7xl mx-auto px-4 md:px-6 py-8">
+
+    <!-- LOADING -->
+    <div id="loading" class="text-center py-20">
+        <div class="w-14 h-14 border-4 border-slate-600 border-t-yellow-400 rounded-full animate-spin mx-auto mb-6"></div>
+        <p class="text-gray-300">Loading account data...</p>
+    </div>
+
+    <!-- MAIN CONTENT (hidden until loaded) -->
+    <div id="mainContent" class="hidden space-y-6">
+
+        <!-- STATS -->
+        <div id="statsGrid" class="grid grid-cols-2 md:grid-cols-5 gap-3 animate-fadeInUp"></div>
+
+        <!-- CONTROLS -->
+        <div class="glass rounded-xl p-5 animate-fadeInUp flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div class="flex gap-2 flex-wrap">
+                <button onclick="filterAccounts('all')" class="filter-btn active" data-filter="all">All</button>
+                <button onclick="filterAccounts('flagged')" class="filter-btn" data-filter="flagged">🔴 Flagged</button>
+                <button onclick="filterAccounts('review')" class="filter-btn" data-filter="review">🟡 Under Review</button>
+                <button onclick="filterAccounts('cleared')" class="filter-btn" data-filter="cleared">🟢 Cleared</button>
+                <button onclick="filterAccounts('high')" class="filter-btn" data-filter="high">⚠️ High Risk (AI)</button>
+            </div>
+            <input id="searchInput" type="text" placeholder="🔍 Search account ID..." class="search-input w-full md:w-72" oninput="searchAccounts(this.value)">
+        </div>
+
+        <!-- ACCOUNTS TABLE -->
+        <div class="glass rounded-xl p-2 animate-fadeInUp" style="max-height:65vh;overflow-y:auto">
+            <table>
+                <thead>
+                    <tr style="background:rgba(251,191,36,0.06);border-bottom:1px solid rgba(251,191,36,0.15)">
+                        <th class="px-4 py-3 text-left text-yellow-300 font-semibold text-xs uppercase">Account ID</th>
+                        <th class="px-4 py-3 text-left text-yellow-300 font-semibold text-xs uppercase">AI Score</th>
+                        <th class="px-4 py-3 text-left text-yellow-300 font-semibold text-xs uppercase">AI Risk</th>
+                        <th class="px-4 py-3 text-left text-yellow-300 font-semibold text-xs uppercase">Patterns</th>
+                        <th class="px-4 py-3 text-left text-yellow-300 font-semibold text-xs uppercase">Admin Status</th>
+                        <th class="px-4 py-3 text-left text-yellow-300 font-semibold text-xs uppercase">Admin Notes</th>
+                        <th class="px-4 py-3 text-center text-yellow-300 font-semibold text-xs uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="accountsBody"></tbody>
+            </table>
+        </div>
+
+        <!-- BULK ACTIONS -->
+        <div class="glass rounded-xl p-5 animate-fadeInUp flex flex-wrap gap-3 items-center">
+            <span class="text-yellow-300 text-sm font-semibold mr-2">Bulk:</span>
+            <button onclick="bulkAction('flagged')" class="btn btn-flag">🔴 Flag All High-Risk</button>
+            <button onclick="bulkAction('review')" class="btn btn-review">🟡 Review All Medium</button>
+            <button onclick="exportCSV()" class="btn btn-trace">📥 Export CSV</button>
+            <button onclick="downloadJSON()" class="btn btn-primary px-4">📄 Download JSON Report</button>
+        </div>
+
+    </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="border-t border-yellow-500/15 mt-16 py-6 text-center text-gray-600 text-xs">
+    <p>🛡️ Money Muling Detection — Admin Panel v1.0</p>
+</footer>
+</div>
+
+<script>
+let allAccounts = [];          // full dataset from /admin/data
+let filteredAccounts = [];     // currently displayed subset
+let adminOverrides = {};       // { accountId: { status, notes } }
+let currentFilter = 'all';
+
+// ───────────── INIT ─────────────
+window.addEventListener('load', () => {
+    // Load any saved overrides from localStorage
+    try { adminOverrides = JSON.parse(localStorage.getItem('adminOverrides') || '{}'); } catch(e) { adminOverrides = {}; }
+    loadData();
+});
+
+function loadData() {
+    fetch('/admin/data', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) { alert(data.errors.join('\n')); return; }
+            allAccounts = data.accounts;
+            filteredAccounts = [...allAccounts];
+            renderStats();
+            renderTable();
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('mainContent').classList.remove('hidden');
+        })
+        .catch(err => alert('Failed to load data: ' + err.message));
+}
+
+// ───────────── STATS ─────────────
+function renderStats() {
+    const total = allAccounts.length;
+    const highRisk = allAccounts.filter(a => a.score >= 50).length;
+    const flagged = allAccounts.filter(a => getStatus(a.account_id) === 'flagged').length;
+    const review = allAccounts.filter(a => getStatus(a.account_id) === 'review').length;
+    const cleared = allAccounts.filter(a => getStatus(a.account_id) === 'cleared').length;
+
+    const items = [
+        { n: total, label: 'Total Accounts', color: 'text-yellow-300' },
+        { n: highRisk, label: 'High Risk (AI)', color: 'text-red-400' },
+        { n: flagged, label: 'Admin Flagged', color: 'text-red-400' },
+        { n: review, label: 'Under Review', color: 'text-orange-400' },
+        { n: cleared, label: 'Cleared', color: 'text-green-400' },
+    ];
+    document.getElementById('statsGrid').innerHTML = items.map(it => `
+        <div class="glass rounded-lg stat-card">
+            <div class="stat-number ${it.color}">${it.n}</div>
+            <div class="stat-label">${it.label}</div>
+        </div>
+    `).join('');
+}
+
+// ───────────── STATUS HELPERS ─────────────
+function getStatus(accountId) {
+    if (adminOverrides[accountId]) return adminOverrides[accountId].status;
+    // Default: high-risk accounts start as "flagged"
+    const acc = allAccounts.find(a => a.account_id === accountId);
+    if (acc && acc.score >= 50) return 'flagged';
+    if (acc && acc.score >= 25) return 'review';
+    return 'cleared';
+}
+
+function getNotes(accountId) {
+    return (adminOverrides[accountId] || {}).notes || '';
+}
+
+function statusBadge(status) {
+    const map = {
+        flagged: '<span class="status-badge status-flagged">🔴 Flagged</span>',
+        review: '<span class="status-badge status-review">🟡 Review</span>',
+        cleared: '<span class="status-badge status-cleared">🟢 Cleared</span>',
+    };
+    return map[status] || map.cleared;
+}
+
+// ───────────── RENDER TABLE ─────────────
+function renderTable() {
+    const tbody = document.getElementById('accountsBody');
+    tbody.innerHTML = filteredAccounts.map(a => {
+        const st = getStatus(a.account_id);
+        const notes = getNotes(a.account_id);
+        const patternTags = (a.patterns || []).map(p =>
+            `<span style="display:inline-block;padding:2px 6px;background:rgba(251,191,36,0.1);color:#fbbf24;border-radius:4px;font-size:10px;margin:1px 2px">${p}</span>`
+        ).join('');
+        const riskLabel = a.score >= 50 ? 'HIGH' : a.score >= 25 ? 'MEDIUM' : 'LOW';
+        const riskClass = a.score >= 50 ? 'text-red-400' : a.score >= 25 ? 'text-orange-400' : 'text-green-400';
+
+        return `
+        <tr style="border-bottom:1px solid rgba(251,191,36,0.06);transition:background 0.2s" onmouseenter="this.style.background='rgba(251,191,36,0.04)'" onmouseleave="this.style.background='transparent'">
+            <td class="px-4 py-3 text-yellow-200 font-semibold text-sm">${a.account_id}</td>
+            <td class="px-4 py-3 text-gray-300 text-sm font-mono">${a.score.toFixed(1)}</td>
+            <td class="px-4 py-3"><span class="${riskClass} text-xs font-bold">${riskLabel}</span></td>
+            <td class="px-4 py-3">${patternTags || '<span class="text-gray-600 text-xs">none</span>'}</td>
+            <td class="px-4 py-3">${statusBadge(st)}</td>
+            <td class="px-4 py-3">
+                <input type="text" value="${notes}" placeholder="Add note..."
+                    class="search-input text-xs py-1 px-2 w-32"
+                    onchange="saveNote('${a.account_id}', this.value)">
+            </td>
+            <td class="px-4 py-3 text-center">
+                <div class="flex gap-1 justify-center flex-wrap">
+                    <button onclick="setStatus('${a.account_id}','flagged')" class="btn btn-flag text-[10px] px-2 py-1" title="Flag">🔴 Flag</button>
+                    <button onclick="setStatus('${a.account_id}','review')" class="btn btn-review text-[10px] px-2 py-1" title="Review">🟡 Review</button>
+                    <button onclick="setStatus('${a.account_id}','cleared')" class="btn btn-clear text-[10px] px-2 py-1" title="Clear">🟢 Clear</button>
+                    <button onclick="traceAccount('${a.account_id}')" class="btn btn-trace text-[10px] px-2 py-1" title="Trace Transactions">🔍 Trace</button>
+                </div>
+            </td>
+        </tr>
+        `;
+    }).join('');
+}
+
+// ───────────── ACTIONS ─────────────
+function setStatus(accountId, status) {
+    if (!adminOverrides[accountId]) adminOverrides[accountId] = {};
+    adminOverrides[accountId].status = status;
+    saveOverrides();
+    renderStats();
+    applyFilters();
+}
+
+function saveNote(accountId, note) {
+    if (!adminOverrides[accountId]) adminOverrides[accountId] = {};
+    adminOverrides[accountId].notes = note;
+    saveOverrides();
+}
+
+function saveOverrides() {
+    localStorage.setItem('adminOverrides', JSON.stringify(adminOverrides));
+}
+
+// ───────────── FILTERS ─────────────
+function filterAccounts(filter) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.filter-btn[data-filter="${filter}"]`).classList.add('active');
+    applyFilters();
+}
+
+function searchAccounts(query) {
+    applyFilters(query);
+}
+
+function applyFilters(query) {
+    query = query || document.getElementById('searchInput').value;
+    const q = query.toLowerCase().trim();
+
+    filteredAccounts = allAccounts.filter(a => {
+        // text search
+        if (q && !a.account_id.toLowerCase().includes(q)) return false;
+        // status filter
+        const st = getStatus(a.account_id);
+        if (currentFilter === 'flagged') return st === 'flagged';
+        if (currentFilter === 'cleared') return st === 'cleared';
+        if (currentFilter === 'review') return st === 'review';
+        if (currentFilter === 'high') return a.score >= 50;
+        return true;
+    });
+    renderTable();
+}
+
+// ───────────── BULK ─────────────
+function bulkAction(status) {
+    const targets = status === 'flagged'
+        ? allAccounts.filter(a => a.score >= 50)
+        : allAccounts.filter(a => a.score >= 25 && a.score < 50);
+    if (!confirm(`Set ${targets.length} accounts to "${status}"?`)) return;
+    targets.forEach(a => {
+        if (!adminOverrides[a.account_id]) adminOverrides[a.account_id] = {};
+        adminOverrides[a.account_id].status = status;
+    });
+    saveOverrides();
+    renderStats();
+    applyFilters();
+}
+
+// ───────────── TRACE ─────────────
+function traceAccount(accountId) {
+    document.getElementById('traceTitle').textContent = `🔍 Transaction Trace — ${accountId}`;
+    document.getElementById('traceBody').innerHTML = `
+        <div class="text-center py-10">
+            <div class="w-10 h-10 border-3 border-slate-600 border-t-yellow-400 rounded-full animate-spin mx-auto mb-4" style="border-width:3px"></div>
+            <p class="text-gray-400 text-sm">Tracing transactions...</p>
+        </div>`;
+    document.getElementById('traceModal').classList.add('active');
+    document.body.classList.add('modal-open');
+
+    fetch('/admin/trace', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ account_id: accountId })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) {
+            document.getElementById('traceBody').innerHTML = `<p class="text-red-400">${data.errors.join(', ')}</p>`;
+            return;
+        }
+        renderTrace(data, accountId);
+    })
+    .catch(err => {
+        document.getElementById('traceBody').innerHTML = `<p class="text-red-400">Error: ${err.message}</p>`;
+    });
+}
+
+function renderTrace(data, accountId) {
+    const stats = data.stats;
+    const txns = data.transactions;
+
+    let html = `
+        <!-- Stats -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:24px">
+            <div class="glass rounded-lg p-3 text-center">
+                <div class="text-lg font-bold text-yellow-300">${stats.num_transactions}</div>
+                <div class="text-[10px] text-gray-500 uppercase">Transactions</div>
+            </div>
+            <div class="glass rounded-lg p-3 text-center">
+                <div class="text-lg font-bold text-red-400">$${stats.total_sent.toLocaleString()}</div>
+                <div class="text-[10px] text-gray-500 uppercase">Total Sent</div>
+            </div>
+            <div class="glass rounded-lg p-3 text-center">
+                <div class="text-lg font-bold text-green-400">$${stats.total_received.toLocaleString()}</div>
+                <div class="text-[10px] text-gray-500 uppercase">Total Received</div>
+            </div>
+            <div class="glass rounded-lg p-3 text-center">
+                <div class="text-lg font-bold ${stats.net_balance >= 0 ? 'text-green-400' : 'text-red-400'}">$${stats.net_balance.toLocaleString()}</div>
+                <div class="text-[10px] text-gray-500 uppercase">Net Balance</div>
+            </div>
+            <div class="glass rounded-lg p-3 text-center">
+                <div class="text-lg font-bold text-cyan-300">${stats.connected_accounts}</div>
+                <div class="text-[10px] text-gray-500 uppercase">Connected</div>
+            </div>
+        </div>
+
+        <!-- Network Graph -->
+        <h3 class="text-sm font-bold text-yellow-300 mb-2 uppercase">Account Network</h3>
+        <div id="traceGraph" style="width:100%;height:300px;background:#0a1520;border-radius:8px;border:1px solid #1e3a5f;margin-bottom:20px"></div>
+
+        <!-- Transaction Table -->
+        <h3 class="text-sm font-bold text-yellow-300 mb-2 uppercase">All Transactions (${txns.length})</h3>
+        <div style="max-height:300px;overflow-y:auto;border-radius:8px;border:1px solid rgba(251,191,36,0.1)">
+            <table>
+                <thead>
+                    <tr style="background:rgba(251,191,36,0.06)">
+                        <th class="px-3 py-2 text-left text-yellow-300 text-[10px] uppercase font-bold">TXN ID</th>
+                        <th class="px-3 py-2 text-left text-yellow-300 text-[10px] uppercase font-bold">Direction</th>
+                        <th class="px-3 py-2 text-left text-yellow-300 text-[10px] uppercase font-bold">Counterparty</th>
+                        <th class="px-3 py-2 text-left text-yellow-300 text-[10px] uppercase font-bold">Amount</th>
+                        <th class="px-3 py-2 text-left text-yellow-300 text-[10px] uppercase font-bold">Timestamp</th>
+                        <th class="px-3 py-2 text-center text-yellow-300 text-[10px] uppercase font-bold">Trace</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${txns.map(tx => `
+                        <tr style="border-bottom:1px solid rgba(251,191,36,0.05)">
+                            <td class="px-3 py-2 text-gray-400 text-xs font-mono">${tx.transaction_id}</td>
+                            <td class="px-3 py-2">
+                                <span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;${tx.direction === 'SENT' ? 'background:rgba(239,83,80,0.15);color:#ef5350' : 'background:rgba(102,187,106,0.15);color:#66bb6a'}">${tx.direction === 'SENT' ? '↑ SENT' : '↓ RECEIVED'}</span>
+                            </td>
+                            <td class="px-3 py-2 text-cyan-300 text-xs font-semibold cursor-pointer hover:text-cyan-200" onclick="traceAccount('${tx.counterparty}')">${tx.counterparty}</td>
+                            <td class="px-3 py-2 text-gray-200 text-xs font-mono">$${tx.amount.toLocaleString()}</td>
+                            <td class="px-3 py-2 text-gray-500 text-xs">${tx.timestamp}</td>
+                            <td class="px-3 py-2 text-center">
+                                <button onclick="traceAccount('${tx.counterparty}')" class="btn btn-trace text-[10px] px-2 py-1">🔍</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Admin action on this account -->
+        <div class="glass rounded-lg p-4 mt-4 flex flex-wrap gap-3 items-center">
+            <span class="text-yellow-300 text-sm font-semibold">Quick Action:</span>
+            <button onclick="setStatus('${accountId}','flagged');updateTraceStatus('${accountId}')" class="btn btn-flag">🔴 Flag</button>
+            <button onclick="setStatus('${accountId}','review');updateTraceStatus('${accountId}')" class="btn btn-review">🟡 Review</button>
+            <button onclick="setStatus('${accountId}','cleared');updateTraceStatus('${accountId}')" class="btn btn-clear">🟢 Clear</button>
+            <span id="traceStatusBadge" class="ml-2">${statusBadge(getStatus(accountId))}</span>
+        </div>
+    `;
+
+    document.getElementById('traceBody').innerHTML = html;
+
+    // Render mini network graph
+    setTimeout(() => renderTraceGraph(data), 100);
+}
+
+function updateTraceStatus(accountId) {
+    document.getElementById('traceStatusBadge').innerHTML = statusBadge(getStatus(accountId));
+}
+
+function renderTraceGraph(data) {
+    const container = document.getElementById('traceGraph');
+    if (!container || !data.nodes) return;
+
+    const nodes = data.nodes.map(n => ({
+        id: n.id,
+        label: n.id,
+        size: n.is_center ? 25 : 14,
+        color: n.is_center ? '#fbbf24' : '#4fc3f7',
+        font: { color: '#c0cede', size: 10, strokeWidth: 2, strokeColor: '#0a1520' },
+        borderWidth: n.is_center ? 3 : 1,
+        borderWidthSelected: 4,
+    }));
+
+    const edges = data.edges.map(e => ({
+        from: e.from,
+        to: e.to,
+        arrows: 'to',
+        label: '$' + e.amount.toLocaleString(),
+        color: { color: '#1e3a5f', highlight: '#fbbf24' },
+        font: { color: '#4a5568', size: 8, strokeWidth: 0 },
+        width: 1.5,
+    }));
+
+    new vis.Network(container,
+        { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) },
+        {
+            physics: { enabled: true, barnesHut: { gravitationalConstant: -2000, springLength: 120 }, stabilization: { iterations: 150 } },
+            interaction: { hover: true, zoomView: true, dragView: true },
+        }
+    );
+}
+
+function closeTraceModal() {
+    document.getElementById('traceModal').classList.remove('active');
+    document.body.classList.remove('modal-open');
+}
+
+// Close modal on background click
+document.getElementById('traceModal').addEventListener('click', e => {
+    if (e.target.id === 'traceModal') closeTraceModal();
+});
+
+// ───────────── JSON REPORT DOWNLOAD ─────────────
+function downloadJSON() {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = '⏳ Generating...';
+
+    fetch('/admin/report', { method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ overrides: adminOverrides })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) { alert(data.errors.join('\n')); return; }
+        const blob = new Blob([JSON.stringify(data.report, null, 4)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'detection_report.json';
+        link.click();
+        URL.revokeObjectURL(url);
+    })
+    .catch(err => alert('Error: ' + err.message))
+    .finally(() => { btn.disabled = false; btn.textContent = '📄 Download JSON Report'; });
+}
+
+// ───────────── EXPORT ─────────────
+function exportCSV() {
+    let csv = 'Account ID,AI Score,AI Risk,Patterns,Admin Status,Admin Notes\n';
+    allAccounts.forEach(a => {
+        const st = getStatus(a.account_id);
+        const notes = getNotes(a.account_id).replace(/"/g, '""');
+        const risk = a.score >= 50 ? 'HIGH' : a.score >= 25 ? 'MEDIUM' : 'LOW';
+        const patterns = (a.patterns || []).join('; ');
+        csv += `"${a.account_id}",${a.score.toFixed(1)},${risk},"${patterns}",${st},"${notes}"\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'admin_accounts_export.csv';
+    link.click();
+}
+</script>
+</body>
+</html>

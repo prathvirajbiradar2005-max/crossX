@@ -131,7 +131,14 @@ if uploaded_file is None:
     st.stop()
 
 # ── Read & Validate ──────────────────────────────────────────────────────────
-raw_df = pd.read_csv(uploaded_file)
+import io
+
+# Re-read with BOM-safe encoding to avoid invisible character issues
+uploaded_file.seek(0)
+raw_bytes = uploaded_file.read()
+# Decode with utf-8-sig to strip BOM, then re-parse
+text = raw_bytes.decode("utf-8-sig", errors="replace")
+raw_df = pd.read_csv(io.StringIO(text))
 is_valid, errors, df = validate_csv(raw_df)
 
 if errors:

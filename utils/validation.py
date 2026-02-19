@@ -7,6 +7,7 @@ graph construction or detection logic runs.
 
 from __future__ import annotations
 
+import re
 import pandas as pd
 import numpy as np
 from typing import Tuple, List
@@ -44,14 +45,25 @@ def validate_csv(df: pd.DataFrame) -> Tuple[bool, List[str], pd.DataFrame]:
     """
     errors: List[str] = []
 
-    # 0. Normalise column names (strip whitespace, lowercase) ----------------
-    df.columns = df.columns.str.strip().str.lower()
+    # 0. Aggressively normalise column names -----------------------------------
+    #    Strip BOM (\ufeff), quotes, non-printable chars, whitespace; lowercase
+    cleaned_cols = []
+    for c in df.columns:
+        c = str(c)
+        c = c.replace("\ufeff", "")          # UTF-8 BOM
+        c = re.sub(r"[^\x20-\x7e]", "", c)  # keep only printable ASCII
+        c = c.strip().strip('"').strip("'").strip().lower()
+        cleaned_cols.append(c)
+    df.columns = cleaned_cols
 
     # 1. Check required columns ------------------------------------------------
     missing = set(REQUIRED_COLUMNS.keys()) - set(df.columns)
     if missing:
         errors.append(f"Missing required columns: {', '.join(sorted(missing))}")
-        errors.append(f"Columns found in your file: {', '.join(sorted(df.columns))}")
+        errors.append(
+            f"Columns found in your file: "
+            f"{', '.join(repr(c) for c in df.columns)}"
+        )
         return False, errors, pd.DataFrame()
 
     # Work on a copy so downstream mutations don't affect the original
